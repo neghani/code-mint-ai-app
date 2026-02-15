@@ -1,12 +1,16 @@
 # CodeMintAI — Netlify MVP deployment
 # Build Smart. Build Safe.
 # Netlify auto-detects Next.js and uses OpenNext adapter.
+#
+# Required: next, react, react-dom, prisma, tailwindcss, autoprefixer must be in
+# "dependencies" (not devDependencies) so production npm install installs them.
 
 [build]
   command = "npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_ENV = "production"
 
 # Env vars (set in Netlify UI: Site settings > Environment variables):
 # DATABASE_URL (required at build time — used by prisma db push during build), JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL

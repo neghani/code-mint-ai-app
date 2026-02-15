@@ -20,6 +20,8 @@
 
 5. **Invite links**: Use `NEXT_PUBLIC_APP_URL` so invite emails/messages point to the correct domain (e.g. `https://your-app.netlify.app/login?token=...`).
 
+6. **Build fails with exit code 2**: Netlify runs `npm install` with production dependencies only. Ensure `next`, `react`, `react-dom`, `prisma`, `tailwindcss`, and `autoprefixer` are in **`dependencies`** in `package.json` (not `devDependencies`). If your deploy repo is a fork, sync `package.json` and `package-lock.json` from this repo and push.
+
 ---
 
 **Docker (local or self-hosted)**  
