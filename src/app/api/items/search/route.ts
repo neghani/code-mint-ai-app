@@ -41,6 +41,7 @@ function toSuggestItem(item: SearchResultItem): SuggestItem {
   const slug = item.slug ?? item.id;
   const usage = (item.downloadCount ?? 0) + (item.copyCount ?? 0);
   const score = Math.min(100, Math.round(50 + Math.min(50, usage)));
+  const tags = item.tags ?? [];
   return {
     id: item.id,
     name: item.title,
@@ -48,7 +49,7 @@ function toSuggestItem(item: SearchResultItem): SuggestItem {
     slug,
     catalogId,
     version,
-    tags: item.tags.map((t) => t.name),
+    tags: Array.isArray(tags) ? tags.map((t) => (typeof t === "object" && t && "name" in t ? t.name : String(t))) : [],
     score,
   };
 }

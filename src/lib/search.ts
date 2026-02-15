@@ -104,8 +104,14 @@ export async function searchItems(
     FROM "Item" i
     WHERE ${whereClause}
   `;
-  const countResult = await prisma.$queryRawUnsafe<[{ total: number }]>(countSql, ...params);
-  const total = countResult[0]?.total ?? 0;
+  let total = 0;
+  try {
+    const countResult = await prisma.$queryRawUnsafe<[{ total: number }]>(countSql, ...params);
+    total = countResult[0]?.total ?? 0;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Search count failed: ${msg}`);
+  }
 
   const selectColumns = `i.id, i.title, i.content, i.type, i.metadata, i.visibility, i.org_id as "orgId", i.created_by as "createdBy", i.created_at as "createdAt", i.updated_at as "updatedAt", i.slug, i.catalog_id as "catalogId", i.catalog_version as "catalogVersion", COALESCE(i.download_count, 0) as "downloadCount", COALESCE(i.copy_count, 0) as "copyCount"${searchSelect}`;
   type Row = {
@@ -134,7 +140,13 @@ export async function searchItems(
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
   `;
   params.push(take, skip);
-  const rows = await prisma.$queryRawUnsafe<Row[]>(dataSql, ...params);
+  let rows: Row[];
+  try {
+    rows = await prisma.$queryRawUnsafe<Row[]>(dataSql, ...params);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Search query failed: ${msg}`);
+  }
 
   const itemIds = rows.map((r) => r.id);
   const itemTags = itemIds.length

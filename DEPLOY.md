@@ -46,10 +46,47 @@ If that fails, the same error will happen on Netlify. Set `DATABASE_URL` in the 
    - `JWT_REFRESH_SECRET` — min 32 characters
    - `NEXT_PUBLIC_APP_URL` — your Netlify site URL (e.g. `https://your-app.netlify.app`)
 
-4. **Seed** (optional, once):  
-   `DATABASE_URL="..." npx prisma db seed`
+4. **Invite links** use `NEXT_PUBLIC_APP_URL` (e.g. `https://your-app.netlify.app/login?token=...`).
 
-5. **Invite links** use `NEXT_PUBLIC_APP_URL` (e.g. `https://your-app.netlify.app/login?token=...`).
+---
+
+## Seeding production (a lot of data)
+
+**Do not run seed during the Netlify build.** Run it once (or when you add data) from your machine with the **production** `DATABASE_URL`.
+
+**1. One-off seed (demo user + optional bulk data):**
+
+```bash
+DATABASE_URL="postgresql://user:pass@host:5432/dbname?sslmode=require" npx prisma db seed
+```
+
+- Creates demo user `demo@codemint.ai` / `password123` and a demo org.
+- If `prisma/seed-data.json` exists, loads **tags** and **items** from it (idempotent; safe to re-run).
+
+**2. Bulk data via `prisma/seed-data.json`:**
+
+Edit `prisma/seed-data.json`:
+
+- **`tags`** — array of `{ "name": "nextjs", "category": "tech" }` (category: tech | job | domain | tool).
+- **`items`** — array of `{ "title", "content", "type": "rule"|"prompt"|"skill", "visibility": "public"|"org", "slug"?, "tags": ["tag1", "tag2"] }`.
+
+Add as many items as you need (seed processes in batches). Then run:
+
+```bash
+DATABASE_URL="your-production-url" npx prisma db seed
+```
+
+**3. Where to get production `DATABASE_URL`:**  
+From your DB provider (Neon, Supabase, etc.) → connection string. Use it only from a secure environment (your laptop or a one-off script), not in the browser or in repo.
+
+**4. Re-run:**  
+Safe to run multiple times; existing demo user/org and items keyed by slug are upserted, not duplicated.
+
+**5. Bulk data from article URLs (crawl → seed):**
+
+- Add one article URL per line to `data/crawl/urls.txt` (lines starting with `#` are ignored).
+- Run the crawler: `node data/crawl/crawl.mjs`. It writes `data/crawl/crawled.json` in the same shape as seed items.
+- Run seed as above: `DATABASE_URL="your-production-url" npx prisma db seed`. Seed loads both `prisma/seed-data.json` and `data/crawl/crawled.json` (if present) and upserts all items. Data appears in the app in bulk.
 
 ---
 

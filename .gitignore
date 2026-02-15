@@ -39,6 +39,10 @@ Thumbs.db
 prisma/*.db
 prisma/*.db-journal
 
+# Crawl output (optional: remove to commit)
+data/crawl/crawled.json
+data/crawl/awesome-cursorrules.json
+data
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
