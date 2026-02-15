@@ -1,6 +1,8 @@
 # CodeMint CLI — Gaps Report
 
-Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/codemint/codemint-cli)) relative to backend API contracts and intended behavior. Fix priority: Critical → Moderate → Minor.
+Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/neghani/code-mint-cli)) relative to backend API contracts and intended behavior. Fix priority: Critical → Moderate → Minor.
+
+**Status (as of sync):** The CLI repo already handles `/api/org/my` array response (client accepts both array and wrapped shape). Cursor skills use `.cursor/skills/<slug>/SKILL.md`. Linux builds are in the release matrix. Remaining gaps below are still accurate unless marked fixed.
 
 ---
 
@@ -12,19 +14,15 @@ Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/codemint/cod
 - **Impact:** Windows users can complete `auth login` but any command that needs the token fails (whoami, add, sync, etc.).
 - **Fix:** Implement read using Windows Credential Manager. Example: use `cmdkey` to list and parse, or call Win32 CredRead API via syscall/cgo or a small helper. Fallback: read from `~/.config/codemint/token-<profile>` when credential manager read is unavailable, with a clear doc note.
 
-### 2. Cursor skills written to wrong path
+### 2. ~~Cursor skills written to wrong path~~ — **FIXED**
 
-- **Where:** `internal/install/installer.go` — `ItemPath()` for Cursor + skill puts file at `.cursor/rules/skill-<slug>.mdc`
-- **Backend/spec:** Cursor expects skills at `.cursor/skills/<slug>/SKILL.md` (post-2.3.35). Rules stay at `.cursor/rules/<slug>.mdc`.
-- **Impact:** Installed Cursor “skills” are not picked up by Cursor when using the standard skills location.
-- **Fix:** In `ItemDir()`/`ItemPath()`, for `tool == ToolCursor` and `itemType == "skill"`, use `filepath.Join(m.Root, ".cursor", "skills", slug)` and return path `.../SKILL.md`. For rules, keep `.cursor/rules/<slug>.mdc`. Do not use `skill-` prefix for Cursor skills.
+- **Where:** `internal/install/installer.go`
+- **Status:** CLI now uses `.cursor/skills/<slug>/SKILL.md` for Cursor skills. No change needed.
 
-### 3. `/api/org/my` response shape mismatch
+### 3. ~~`/api/org/my` response shape mismatch~~ — **FIXED**
 
-- **Where:** `internal/api/client.go` — `OrgList()` decodes into `OrgListResponse` with `Organizations []Organization`
-- **Backend:** `src/app/api/org/my/route.ts` returns the org array directly: `NextResponse.json(orgs)` (no `{ organizations: orgs }` wrapper).
-- **Impact:** `codemint org list` fails to decode and returns an error.
-- **Fix:** Decode response as `[]Organization` (or a type alias). Update `OrgListResponse` to match: either use a raw array type for the API response or add a custom unmarshal that accepts both `[{...}]` and `{ "organizations": [...] }` for backward compatibility.
+- **Where:** `internal/api/client.go` — `OrgList()` decodes raw JSON and accepts both a raw array `[{...}]` and wrapped `{ "organizations": [...] }`.
+- **Status:** Backend returns raw array; CLI handles it. No change needed.
 
 ---
 
@@ -48,11 +46,10 @@ Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/codemint/cod
 - **Reality:** Prisma projects usually have `prisma/schema.prisma`.
 - **Fix:** Also check `prisma/schema.prisma` (e.g. add a second check or a single check that tries both paths).
 
-### 7. Skills paths for Windsurf, Continue, Claude
+### 7. ~~Skills paths for Windsurf, Continue, Claude~~ — **FIXED**
 
-- **Where:** `internal/install/installer.go` — skills for Windsurf, Continue, Claude are routed to the same dir as rules with `skill-<slug>.md`.
-- **Spec (from rules/skills mapping):** Windsurf skills: `.windsurf/skills/skill-<slug>.md`. Continue: `.continue/skills/skill-<slug>.md`. Claude: `.claude/skills/skill-<slug>.md`.
-- **Fix:** In `ItemDir()` for `itemType == "skill"`, return a dedicated skills subdir per tool (e.g. `.windsurf/skills`, `.continue/skills`, `.claude/skills`). Keep filename `skill-<slug>.md` where the spec uses that pattern.
+- **Where:** `internal/install/installer.go`
+- **Status:** CLI now uses `.windsurf/skills`, `.continue/skills`, `.claude/skills` for skills; filename remains `skill-<slug>.md`.
 
 ### 8. No checksum verification on install
 
@@ -77,11 +74,10 @@ Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/codemint/cod
 - **Where:** `cmd/root.go` passes `Debug: flagDebug` to `api.NewClient`; client stores it but does not log requests/responses or redact headers.
 - **Fix:** When `Debug` is true, use a round tripper that logs method, URL, and status; redact `Authorization` and any `Cookie` headers. Keep token redaction in errors (already present).
 
-### 12. Linux missing from release build matrix
+### 12. ~~Linux missing from release build matrix~~ — **FIXED**
 
-- **Where:** `.github/workflows/release.yml` (in CLI repo) — typically builds darwin/arm64, darwin/amd64, windows/amd64.
-- **Impact:** Linux users have no official binary.
-- **Fix:** Add `linux/amd64` and optionally `linux/arm64` to the matrix; produce tarballs and include in SHA256SUMS and release notes.
+- **Where:** `.github/workflows/release.yml` (in CLI repo).
+- **Status:** Matrix includes `linux_arm64` and `linux_amd64`. No change needed.
 
 ### 13. Copilot instructions path vs common usage
 
@@ -144,17 +140,16 @@ Gaps in the existing Go CLI ([code-mint-ali-cli](https://github.com/codemint/cod
 - **Where:** Tokens are long-lived; backend may add `expiresAt` later.
 - **Fix:** If backend adds expiry to token payload or a header, parse it and show a warning when token expires within 7 days; suggest re-login.
 
-### 24. Remove does not clean empty skill dir (Cursor)
+### 24. ~~Remove does not clean empty skill dir (Cursor)~~ — **FIXED**
 
-- **Where:** `cmd/remove.go` + installer — Cursor skills live in `.cursor/skills/<slug>/SKILL.md`. Remove deletes the file only.
-- **Fix:** After removing the file, if the parent dir is `.cursor/skills/<slug>` and is empty, remove the directory too.
+- **Where:** `internal/install/installer.go` — `RemovePath()` now checks if the parent dir is empty and removes it after removing the file.
 
 ---
 
 ## Reference
 
 - Backend API: [docs/cli-integration.md](cli-integration.md)
-- CLI execution plan: `CODEMINT_CLI_EXECUTION_PLAN.md` (in CLI repo)
+- CLI repo: [neghani/code-mint-cli](https://github.com/neghani/code-mint-cli); execution plan: `CODEMINT_CLI_EXECUTION_PLAN.md` (in CLI repo)
 - Backend catalog resolve: `src/app/api/catalog/resolve/route.ts`
 - Backend catalog sync: `src/app/api/catalog/sync/route.ts`
 - Backend org list: `src/app/api/org/my/route.ts`

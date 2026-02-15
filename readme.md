@@ -40,6 +40,7 @@ CLI authentication uses a browser-based flow: you sign in at `/cli-auth`, author
 |-----|-------------|
 | [CLI integration](docs/cli-integration.md) | Auth flow, catalog and items API, identifier format. |
 | [CLI gaps](docs/CLI_GAPS.md) | Known gaps and fixes for the CodeMint CLI. |
+| [Repo coordination](docs/REPO_COORDINATION.md) | How the app and [CLI repo](https://github.com/neghani/code-mint-cli) stay in sync (install script, docs). |
 | [Extension spec](docs/EXTENSION_SPEC.md) | VS Code / Cursor extension behavior and design. |
 
 ---

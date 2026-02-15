@@ -1,23 +1,17 @@
 # CodeMint CLI Integration TODO
 
+**CLI repo:** [neghani/code-mint-cli](https://github.com/neghani/code-mint-cli) (code-mint-ali-cli). This app (code-mint-ai) is the backend; the CLI is developed in the separate repo.
+
 ## Phase 0: Scope and Contracts
-- [ ] Finalize CLI command set for v1:
-  - [ ] `codemint scan [path]`
-  - [ ] `codemint suggest`
-  - [ ] `codemint add @rule/<slug>`
-  - [ ] `codemint add @skill/<slug>`
-  - [ ] `codemint sync`
-  - [ ] `codemint list --installed`
-  - [ ] `codemint remove @rule/<slug>` / `@skill/<slug>`
-- [ ] Freeze identifier format:
-  - [ ] Human ref: `@rule/<slug>`, `@skill/<slug>`
-  - [ ] Internal key: `catalogId`
-  - [ ] Version: semver
-  - [ ] Integrity: `checksum`
-- [ ] Define CLI output modes:
-  - [ ] Human-readable
-  - [ ] `--json`
-  - [ ] `--dry-run`
+- [x] Finalize CLI command set for v1 (implemented in CLI repo):
+  - [x] `codemint scan [path]`
+  - [x] `codemint suggest`
+  - [x] `codemint add @rule/<slug>` / `@skill/<slug>`
+  - [x] `codemint sync`
+  - [x] `codemint list [--installed]`
+  - [x] `codemint remove @rule/<slug>` / `@skill/<slug>`
+- [x] Identifier format in use: `@rule/<slug>`, `@skill/<slug>`, `catalogId`, semver, `checksum`
+- [x] Output modes: human-readable, `--json`, `--dry-run` (add/sync)
 
 ## Phase 1: Backend API Readiness
 - [ ] Confirm all protected APIs accept `Authorization: Bearer <token>` consistently.
@@ -40,67 +34,16 @@
   - [ ] `DELETE /api/auth/cli-token/:id`
 
 ## Phase 2: CLI Auth Integration
-- [ ] Confirm browser callback flow works on macOS + Windows:
-  - [ ] open `/cli-auth?port=...`
-  - [ ] callback receives `token`
-  - [ ] verify with `GET /api/auth/me`
-- [ ] Ensure login redirect preserves `next` to return users to `/cli-auth`.
-- [ ] Add `codemint auth whoami`.
-- [ ] Add `codemint auth logout`.
-- [ ] Add `codemint doctor` auth checks.
+- [x] Browser callback flow: `/cli-auth?port=...` → callback with token → `GET /api/auth/me` (implemented in CLI).
+- [ ] Ensure login redirect preserves `next` to return users to `/cli-auth` (backend).
+- [x] `codemint auth whoami`, `auth logout`, `doctor` (implemented in CLI).
 
-## Phase 3: Repo Intelligence (`scan`)
-- [ ] Build technology detector from repository signals:
-  - [ ] `package.json`
-  - [ ] `tsconfig.json`
-  - [ ] `next.config.*`
-  - [ ] `prisma/schema.prisma`
-  - [ ] `Dockerfile`
-  - [ ] lockfiles (`package-lock.json`, etc.)
-- [ ] Produce normalized tags:
-  - [ ] `tech:*`
-  - [ ] `tool:*`
-  - [ ] `lang:*`
-- [ ] Add confidence scoring per detected technology.
-- [ ] Add scan cache + invalidation behavior.
-
-## Phase 4: Recommendations (`suggest`)
-- [ ] Query catalog by detected tags and `type=rule|skill`.
-- [ ] Rank by:
-  - [ ] exact tech matches
-  - [ ] type relevance
-  - [ ] visibility/org relevance
-- [ ] Return recommendations with reasons.
-- [ ] Add `--limit`, `--type`, and `--json` options.
-
-## Phase 5: Install Flow (`add`)
-- [ ] Resolve ref (`@rule/<slug>` or `@skill/<slug>`) to catalog item.
-- [ ] Download/construct install payload from API.
-- [ ] Write local assets into managed project folder:
-  - [ ] `.codemint/rules/`
-  - [ ] `.codemint/skills/`
-- [ ] Create/update manifest: `.codemint/manifest.json`.
-- [ ] Prevent duplicate installs for same `catalogId + version`.
-- [ ] Add install conflict handling if local modifications exist.
-
-## Phase 6: Sync Flow (`sync`)
-- [ ] Read installed items from manifest.
-- [ ] Fetch latest versions/checksums from API.
-- [ ] Compute plan:
-  - [ ] upgrades
-  - [ ] unchanged
-  - [ ] deprecated/removed
-- [ ] Support `--dry-run`.
-- [ ] Apply updates atomically with backup/rollback.
-- [ ] Print concise summary report.
-
-## Phase 7: Local Data and Manifest
-- [ ] Finalize manifest schema:
-  - [ ] `schemaVersion`
-  - [ ] `installed[]` entries (`catalogId`, `ref`, `version`, `checksum`, `installedAt`, `source`)
-  - [ ] project metadata (`path`, `lastSyncAt`)
-- [ ] Add manifest migration strategy for future schema updates.
-- [ ] Add locking to avoid concurrent CLI writes.
+## Phase 3–7: Implemented in CLI repo
+- [x] `scan` (tech detector, tags, confidence).
+- [x] `suggest` (catalog by tags/type, ranking, `--limit`/`--type`/`--json`).
+- [x] `add` (resolve ref, write to tool paths, manifest).
+- [x] `sync` (manifest, catalog/sync API, plan, `--dry-run`).
+- [x] Manifest schema (installed[], path, tool, ref, version, checksum). Optional: `lastSyncAt`, file locking (see [CLI_GAPS.md](docs/CLI_GAPS.md)).
 
 ## Phase 8: Quality and Security
 - [ ] Unit tests:

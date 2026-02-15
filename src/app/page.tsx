@@ -111,13 +111,13 @@ export default function HomePage() {
             <div className="mt-10 space-y-4 rounded-xl border border-charcoal-700 bg-charcoal-900 p-6 font-mono text-sm">
               <p className="text-gray-500"># macOS / Linux — one-line install</p>
               <p className="text-gray-200 break-all">
-                curl -fsSL https://github.com/neghani/code-mint-cli/releases/latest/download/install.sh | sh
+                curl -fsSL https://raw.githubusercontent.com/neghani/code-mint-cli/main/install.sh | sh
               </p>
 
-              <p className="mt-3 text-gray-500"># Or download directly (v0.1.0)</p>
+              <p className="mt-3 text-gray-500"># Or download directly (v0.1.4 / latest)</p>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.0/codemint_0.1.0_windows_amd64.zip"
+                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.4/codemint_0.1.4_windows_amd64.zip"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded border border-charcoal-600 bg-charcoal-800 px-3 py-1.5 text-xs text-mint-400 hover:border-mint-500 hover:bg-charcoal-700"
@@ -125,7 +125,7 @@ export default function HomePage() {
                   Windows (amd64)
                 </a>
                 <a
-                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.0/codemint_0.1.0_darwin_arm64.tar.gz"
+                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.4/codemint_0.1.4_darwin_arm64.tar.gz"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded border border-charcoal-600 bg-charcoal-800 px-3 py-1.5 text-xs text-mint-400 hover:border-mint-500 hover:bg-charcoal-700"
@@ -133,12 +133,28 @@ export default function HomePage() {
                   macOS Apple Silicon (arm64)
                 </a>
                 <a
-                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.0/codemint_0.1.0_darwin_amd64.tar.gz"
+                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.4/codemint_0.1.4_darwin_amd64.tar.gz"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded border border-charcoal-600 bg-charcoal-800 px-3 py-1.5 text-xs text-mint-400 hover:border-mint-500 hover:bg-charcoal-700"
                 >
                   macOS Intel (amd64)
+                </a>
+                <a
+                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.4/codemint_0.1.4_linux_amd64.tar.gz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded border border-charcoal-600 bg-charcoal-800 px-3 py-1.5 text-xs text-mint-400 hover:border-mint-500 hover:bg-charcoal-700"
+                >
+                  Linux (amd64)
+                </a>
+                <a
+                  href="https://github.com/neghani/code-mint-cli/releases/download/v0.1.4/codemint_0.1.4_linux_arm64.tar.gz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded border border-charcoal-600 bg-charcoal-800 px-3 py-1.5 text-xs text-mint-400 hover:border-mint-500 hover:bg-charcoal-700"
+                >
+                  Linux (arm64)
                 </a>
               </div>
 
