@@ -96,4 +96,18 @@ export const itemRepo = {
       orderBy: { catalogVersion: "desc" },
     });
   },
+
+  async incrementDownloadCount(id: string) {
+    await prisma.item.update({
+      where: { id },
+      data: { downloadCount: { increment: 1 } },
+    });
+  },
+
+  async incrementCopyCount(id: string) {
+    await prisma.item.update({
+      where: { id },
+      data: { copyCount: { increment: 1 } },
+    });
+  },
 };

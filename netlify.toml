@@ -9,7 +9,7 @@
   NODE_VERSION = "20"
 
 # Env vars (set in Netlify UI: Site settings > Environment variables):
-# DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL
+# DATABASE_URL (required at build time — used by prisma db push during build), JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL
 
 [[headers]]
   for = "/*"

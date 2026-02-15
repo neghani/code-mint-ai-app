@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/header";
 import {
@@ -21,6 +21,8 @@ type SearchItem = {
   visibility: string;
   createdAt: string;
   slug: string | null;
+  downloadCount: number;
+  copyCount: number;
   tags: { id: string; name: string; category: string }[];
   snippet?: string;
 };
@@ -40,6 +42,7 @@ function buildSearchUrl(params: {
   org?: string;
   page?: number;
   limit?: number;
+  sort?: "popular" | "createdAt";
 }): string {
   const sp = new URLSearchParams();
   if (params.q) sp.set("q", params.q);
@@ -49,7 +52,21 @@ function buildSearchUrl(params: {
   if (params.org) sp.set("org", params.org);
   if (params.page) sp.set("page", String(params.page));
   if (params.limit) sp.set("limit", String(params.limit));
+  if (params.sort) sp.set("sort", params.sort);
   return `/api/items/search?${sp.toString()}`;
+}
+
+async function trackCopy(itemId: string) {
+  try {
+    await fetch(`/api/items/${itemId}/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ action: "copy" }),
+    });
+  } catch {
+    // best-effort
+  }
 }
 
 const columnHelper = createColumnHelper<SearchItem>();
@@ -82,21 +99,24 @@ const columns = [
   }),
   columnHelper.accessor("tags", {
     header: "Tags",
-    cell: (c) => (
-      <div className="flex flex-wrap gap-1">
-        {c.getValue().slice(0, 3).map((t) => (
-          <span
-            key={t.id}
-            className="rounded bg-charcoal-700 px-2 py-0.5 text-xs text-gray-400"
-          >
-            {t.name}
-          </span>
-        ))}
-        {c.getValue().length > 3 && (
-          <span className="text-xs text-gray-500">+{c.getValue().length - 3}</span>
-        )}
-      </div>
-    ),
+    cell: (c) => {
+      const tags = c.getValue() ?? [];
+      return (
+        <div className="flex flex-wrap gap-1">
+          {tags.slice(0, 3).map((t) => (
+            <span
+              key={t.id}
+              className="rounded bg-charcoal-700 px-2 py-0.5 text-xs text-gray-400"
+            >
+              {t.name}
+            </span>
+          ))}
+          {tags.length > 3 && (
+            <span className="text-xs text-gray-500">+{tags.length - 3}</span>
+          )}
+        </div>
+      );
+    },
   }),
   columnHelper.accessor("visibility", {
     header: "Scope",
@@ -112,9 +132,28 @@ const columns = [
       </span>
     ),
   }),
+  columnHelper.display({
+    id: "uses",
+    header: "Uses",
+    cell: ({ row }) => {
+      const d = row.original.downloadCount ?? 0;
+      const c = row.original.copyCount ?? 0;
+      const total = d + c;
+      return (
+        <span className="text-xs text-gray-400" title={`${d} downloads, ${c} copies`}>
+          {total}
+        </span>
+      );
+    },
+  }),
   columnHelper.accessor("createdAt", {
     header: "Created",
-    cell: (c) => new Date(c.getValue()).toLocaleDateString(),
+    cell: (c) => {
+      const v = c.getValue();
+      if (!v) return "—";
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+    },
   }),
   columnHelper.display({
     id: "actions",
@@ -122,7 +161,8 @@ const columns = [
       <button
         type="button"
         onClick={() => {
-          navigator.clipboard.writeText(row.original.content);
+          navigator.clipboard?.writeText(row.original.content ?? "").catch(() => {});
+          trackCopy(row.original.id);
         }}
         className="text-sm text-mint-400 hover:underline"
       >
@@ -144,6 +184,7 @@ export default function ExplorePage() {
   const [type, setType] = useState<ItemType | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<"public" | "org" | "all">("public");
+  const [sort, setSort] = useState<"popular" | "createdAt">("popular");
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
@@ -166,13 +207,14 @@ export default function ExplorePage() {
   });
 
   const { data, isLoading, error } = useQuery<SearchResponse>({
-    queryKey: ["items", "search", q, type || undefined, tags, visibility, page],
+    queryKey: ["items", "search", q, type || undefined, tags, visibility, sort, page],
     queryFn: async () => {
       const url = buildSearchUrl({
         q: q || undefined,
         type: type || undefined,
         tags: tags.length ? tags : undefined,
         visibility: isLoggedIn ? visibility : "public",
+        sort,
         page,
         limit: 25,
       });
@@ -265,6 +307,17 @@ export default function ExplorePage() {
               <option value="org">My orgs only</option>
             </select>
           )}
+          <select
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value as "popular" | "createdAt");
+              setPage(1);
+            }}
+            className="input-field max-w-[140px]"
+          >
+            <option value="popular">Sort: Most used</option>
+            <option value="createdAt">Sort: Newest</option>
+          </select>
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-lg border border-charcoal-700">
@@ -293,11 +346,8 @@ export default function ExplorePage() {
                 </thead>
                 <tbody>
                   {table.getRowModel().rows.map((row) => (
-                    <>
-                      <tr
-                        key={row.id}
-                        className="border-b border-charcoal-800 hover:bg-charcoal-800/30"
-                      >
+                    <React.Fragment key={row.id}>
+                      <tr className="border-b border-charcoal-800 hover:bg-charcoal-800/30">
                         {row.getVisibleCells().map((cell) => (
                           <td key={cell.id} className="px-4 py-3 text-sm">
                             {flexRender(
@@ -308,7 +358,7 @@ export default function ExplorePage() {
                         ))}
                       </tr>
                       {row.getIsExpanded() && (
-                        <tr key={`${row.id}-expanded`} className="bg-charcoal-800/50">
+                        <tr className="bg-charcoal-800/50">
                           <td colSpan={columns.length} className="px-4 py-3">
                             <div className="space-y-4">
                               {(row.original.type === "rule" || row.original.type === "skill") &&
@@ -324,9 +374,10 @@ export default function ExplorePage() {
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          navigator.clipboard.writeText(
+                                          navigator.clipboard?.writeText(
                                             `codemint add @${row.original.type}/${row.original.slug}`
-                                          );
+                                          ).catch(() => {});
+                                          trackCopy(row.original.id);
                                         }}
                                         className="rounded border border-charcoal-600 px-3 py-2 text-sm text-gray-400 hover:border-mint-500 hover:text-mint-400"
                                       >
@@ -340,15 +391,15 @@ export default function ExplorePage() {
                                   Content
                                 </p>
                                 <div className="whitespace-pre-wrap font-mono text-sm text-gray-300">
-                                  {row.original.snippet || row.original.content.slice(0, 500)}
-                                  {row.original.content.length > 500 && "…"}
+                                  {row.original.snippet || (row.original.content ?? "").slice(0, 500)}
+                                  {(row.original.content?.length ?? 0) > 500 && "…"}
                                 </div>
                               </div>
                             </div>
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

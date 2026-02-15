@@ -29,8 +29,41 @@ Catalog items are items with `slug`, `catalogId`, and `catalogVersion` set. Meta
 
 ## Items
 
-- **Search:** `GET /api/items/search?q=&type=&tags=&visibility=&org=&page=&limit=`
+- **Search:** `GET /api/items/search?q=&type=&tags=&visibility=&org=&page=&limit=&sort=`
 - **Get one:** `GET /api/items/:id`
+
+### Suggest (codemint suggest)
+
+`codemint suggest` calls **`GET /api/items/search`** with:
+
+- **Auth:** `Authorization: Bearer <token>`
+- **Query params:** `q` (optional, joined scan tags), `type` (optional: `rule` or `skill`), `tags` (optional, comma-separated), `latest=true`, `page=1`, `limit=50`
+
+**Success (200):** No matches return `200` with `"items": []`. Response shape:
+
+```json
+{
+  "items": [
+    {
+      "id": "...",
+      "name": "Safe API Route Pattern",
+      "type": "rule",
+      "slug": "safe-api-route-pattern",
+      "catalogId": "rule:safe-api-route-pattern",
+      "version": "1.2.0",
+      "tags": ["lang:typescript", "tech:nextjs"],
+      "score": 92
+    }
+  ],
+  "page": 1,
+  "limit": 50,
+  "total": 1
+}
+```
+
+The response also includes `data` (full item payload) and `pageSize` for the web app. CLI consumers should use `items`, `page`, `limit`, `total`.
+
+**Errors:** `401` unauthorized, `403` forbidden, `422` invalid type/tags, `500` server error. Body: `{ "error": { "code": "...", "message": "..." } }`.
 - **Create:** `POST /api/items` with body including optional `slug`, `catalogId`, `catalogVersion`. For catalog entries (rule/skill), when `catalogId` is set, `slug` and `catalogVersion` are required. `metadata` can include `checksum`, `deprecated`, `changelog`.
 - **Update:** `PUT /api/items/:id`
 - **Delete:** `DELETE /api/items/:id`

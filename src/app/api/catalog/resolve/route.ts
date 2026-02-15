@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOptionalAuth } from "@/middleware/requireAuth";
 import { getUserOrgIds } from "@/lib/request-context";
 import { itemRepo } from "@/repositories/item.repo";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+import { apiError } from "@/lib/api-error";
+
+const RATE_LIMIT_ANON = 60;
+const RATE_LIMIT_AUTH = 120;
 
 /**
  * GET /api/catalog/resolve?ref=@rule/slug or @skill/slug
@@ -9,7 +15,13 @@ import { itemRepo } from "@/repositories/item.repo";
  * Public items only, or org items if user is authenticated and in org.
  */
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req);
   const auth = await getOptionalAuth(req);
+  const rateKey = auth ? `catalog:${auth.userId}` : `catalog:ip:${ip}`;
+  const limitPerMin = auth ? RATE_LIMIT_AUTH : RATE_LIMIT_ANON;
+  if (!checkRateLimit(rateKey, limitPerMin)) {
+    return apiError("rate_limited", "Too many requests", 429);
+  }
   const userOrgIds = auth ? await getUserOrgIds(auth.userId) : [];
 
   const ref = req.nextUrl.searchParams.get("ref");
@@ -33,6 +45,8 @@ export async function GET(req: NextRequest) {
   if (item.visibility === "org" && item.orgId && !userOrgIds.includes(item.orgId)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  await itemRepo.incrementDownloadCount(item.id);
 
   const meta = (item.metadata as Record<string, unknown>) ?? {};
   return NextResponse.json({

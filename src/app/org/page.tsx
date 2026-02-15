@@ -9,7 +9,7 @@ type Org = {
   id: string;
   name: string;
   createdAt: string;
-  members: { id: string; role: string }[];
+  members?: { id: string; role: string }[];
 };
 
 export default function OrgPage() {
@@ -131,7 +131,7 @@ export default function OrgPage() {
                   <div>
                     <span className="font-medium text-white">{org.name}</span>
                     <span className="ml-2 text-sm text-gray-500">
-                      {org.members.length} member{org.members.length !== 1 ? "s" : ""}
+                      {org.members?.length ?? 0} member{(org.members?.length ?? 0) !== 1 ? "s" : ""}
                     </span>
                   </div>
                   <div className="flex gap-2">

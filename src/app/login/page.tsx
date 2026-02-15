@@ -3,29 +3,42 @@
 import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("token") ?? undefined;
   const nextUrl = searchParams.get("next") ?? undefined;
-  const decoded = nextUrl ? decodeURIComponent(nextUrl) : "";
+  const decoded = nextUrl ? safeDecode(nextUrl) : "";
   const redirectTo = decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "/explore";
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const modeParam = searchParams.get("mode");
+  const initialMode = modeParam === "register" ? "register" : "login";
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
+          queryClient.setQueryData(["auth", "me"], { user: data.user });
           router.replace(redirectTo);
           return;
         }
         setCheckingAuth(false);
       })
       .catch(() => setCheckingAuth(false));
-  }, [router, redirectTo]);
+  }, [queryClient, router, redirectTo]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -65,6 +78,9 @@ function LoginForm() {
           return;
         }
       }
+      queryClient.setQueryData(["auth", "me"], { user: data.user });
+      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["items", "search"] });
       router.push(redirectTo);
       router.refresh();
     } catch {

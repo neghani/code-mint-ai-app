@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, getOptionalAuth } from "@/middleware/requireAuth";
 import { itemService } from "@/services/item.service";
 import { getUserOrgIds } from "@/lib/request-context";
+import { logError } from "@/lib/logger";
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -71,6 +72,7 @@ export async function DELETE(
     if (e instanceof Error && (e.message === "Forbidden" || e.message === "Item not found")) {
       return NextResponse.json({ error: e.message }, { status: e.message === "Item not found" ? 404 : 403 });
     }
+    logError("items/DELETE", e);
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

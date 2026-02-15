@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,18 +9,128 @@ import { Header } from "@/components/header";
 type Tag = { id: string; name: string; category: string };
 type Org = { id: string; name: string };
 
+const MAX_TAGS = 20;
+
+function TagInput({
+  tags,
+  onChange,
+  suggestions,
+}: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  suggestions: Tag[];
+}) {
+  const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = input.trim()
+    ? suggestions
+        .filter(
+          (s) =>
+            s.name.includes(input.toLowerCase()) && !tags.includes(s.name)
+        )
+        .slice(0, 8)
+    : [];
+
+  function addTag(name: string) {
+    const clean = name.toLowerCase().trim().replace(/[^a-z0-9:_-]/g, "");
+    if (!clean || tags.includes(clean) || tags.length >= MAX_TAGS) return;
+    onChange([...tags, clean]);
+    setInput("");
+  }
+
+  function removeTag(name: string) {
+    onChange(tags.filter((t) => t !== name));
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
+      if (input.trim()) {
+        e.preventDefault();
+        addTag(input);
+      }
+    }
+    if (e.key === "Backspace" && !input && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <div
+        className="input-field mt-1 flex min-h-[42px] flex-wrap items-center gap-1.5 px-2 py-1.5 cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 rounded-md bg-mint-500/15 px-2 py-0.5 text-xs font-medium text-mint-400 border border-mint-500/30"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeTag(tag);
+              }}
+              className="ml-0.5 text-mint-400/60 hover:text-mint-300 text-sm leading-none"
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          placeholder={tags.length === 0 ? "Type a tag and press Enter (e.g. lang:typescript, nextjs)" : tags.length >= MAX_TAGS ? "Max tags reached" : "Add tag..."}
+          disabled={tags.length >= MAX_TAGS}
+          className="min-w-[120px] flex-1 border-none bg-transparent text-sm text-gray-200 outline-none placeholder:text-gray-600"
+        />
+      </div>
+      {focused && filtered.length > 0 && (
+        <ul className="absolute z-20 mt-1 w-full rounded-lg border border-charcoal-700 bg-charcoal-900 py-1 shadow-lg max-h-40 overflow-y-auto">
+          {filtered.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(s.name);
+                }}
+                className="w-full px-3 py-1.5 text-left text-sm text-gray-300 hover:bg-charcoal-800 hover:text-white"
+              >
+                {s.name}
+                <span className="ml-2 text-xs text-gray-600">{s.category}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1 text-xs text-gray-600">
+        {tags.length}/{MAX_TAGS} &middot; Press Enter or comma to add &middot; New tags are created automatically
+      </p>
+    </div>
+  );
+}
+
 export default function MintPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [type, setType] = useState<"rule" | "prompt" | "skill">("prompt");
-  const [tagIds, setTagIds] = useState<string[]>([]);
+  const [tagNames, setTagNames] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<"public" | "org">("public");
   const [orgId, setOrgId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const { data: tags = [] } = useQuery<Tag[]>({
+  const { data: existingTags = [] } = useQuery<Tag[]>({
     queryKey: ["tags"],
     queryFn: async () => {
       const res = await fetch("/api/tags", { credentials: "include" });
@@ -56,7 +166,7 @@ export default function MintPage() {
       type: string;
       visibility: string;
       orgId: string | null;
-      tagIds: string[];
+      tagNames: string[];
     }) => {
       const res = await fetch("/api/items", {
         method: "POST",
@@ -73,6 +183,7 @@ export default function MintPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items", "search"] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
       router.push("/explore");
     },
     onError: (e: Error) => setError(e.message),
@@ -92,12 +203,8 @@ export default function MintPage() {
       type,
       visibility,
       orgId: finalOrgId,
-      tagIds,
+      tagNames,
     });
-  }
-
-  function toggleTag(id: string) {
-    setTagIds((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
   }
 
   if (!isLoggedIn) {
@@ -119,9 +226,9 @@ export default function MintPage() {
       <Header />
       <main className="mx-auto max-w-2xl px-4 py-8">
         <Link href="/explore" className="text-sm text-gray-500 hover:text-gray-400">
-          ← Explore
+          &larr; Explore
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold text-white">Mint New Rule</h1>
+        <h1 className="mt-4 text-2xl font-semibold text-white">Mint New Item</h1>
         <p className="mt-1 text-gray-400">
           Add a prompt, rule, or skill. Clean in, clean out.
         </p>
@@ -158,7 +265,7 @@ export default function MintPage() {
             <label className="block text-sm font-medium text-gray-400">Type</label>
             <div className="mt-2 flex gap-4">
               {(["rule", "prompt", "skill"] as const).map((t) => (
-                <label key={t} className="flex items-center gap-2">
+                <label key={t} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="type"
@@ -172,28 +279,14 @@ export default function MintPage() {
               ))}
             </div>
           </div>
-          {tags.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-400">Tags</label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {tags.map((t) => (
-                  <label key={t.id} className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      checked={tagIds.includes(t.id)}
-                      onChange={() => toggleTag(t.id)}
-                      className="rounded border-charcoal-600 bg-charcoal-800 text-mint-500"
-                    />
-                    <span className="text-sm text-gray-300">{t.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-400">Tags</label>
+            <TagInput tags={tagNames} onChange={setTagNames} suggestions={existingTags} />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-400">Visibility</label>
             <div className="mt-2 flex gap-4">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="visibility"
@@ -204,7 +297,7 @@ export default function MintPage() {
                 />
                 <span className="text-gray-300">Public</span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="visibility"

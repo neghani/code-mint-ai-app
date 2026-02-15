@@ -92,6 +92,8 @@ model Item {
   slug            String?
   catalogId       String?    @map("catalog_id")
   catalogVersion  String?    @map("catalog_version")
+  downloadCount   Int        @default(0) @map("download_count")
+  copyCount       Int        @default(0) @map("copy_count")
   org             Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
   tags            ItemTag[]
   @@index([orgId])

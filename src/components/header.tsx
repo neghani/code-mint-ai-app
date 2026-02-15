@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 type User = { id: string; email: string; name: string | null } | null;
 
 async function fetchMe(): Promise<{ user: User }> {
-  const res = await fetch("/api/auth/me", { credentials: "include" });
-  const data = await res.json();
-  return data;
+  const res = await fetch("/api/auth/me", {
+    credentials: "include",
+    cache: "no-store",
+  });
+  return res.json();
 }
 
 async function logout(): Promise<void> {
@@ -29,6 +31,8 @@ export function Header({ variant = "default" }: { variant?: "default" | "minimal
   async function handleLogout() {
     await logout();
     queryClient.setQueryData(["auth", "me"], { user: null });
+    await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    await queryClient.invalidateQueries({ queryKey: ["items", "search"] });
     router.push("/");
     router.refresh();
   }
@@ -39,21 +43,26 @@ export function Header({ variant = "default" }: { variant?: "default" | "minimal
         <Link href="/" className="text-xl font-semibold text-mint-400">
           CodeMintAI
         </Link>
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-4 text-sm">
           <Link href="/explore" className="text-gray-300 hover:text-white">
             Explore
           </Link>
+
           {isLoading ? (
-            <span className="text-sm text-gray-500">...</span>
+            <span className="text-gray-500">...</span>
           ) : user ? (
             <>
               <Link href="/mint" className="text-gray-300 hover:text-white">
                 Mint
               </Link>
               <Link href="/org" className="text-gray-300 hover:text-white">
-                My orgs
+                My Orgs
               </Link>
-              <span className="text-sm text-gray-400" title={user.email}>
+              <span
+                className="max-w-[120px] truncate text-gray-400"
+                title={user.email}
+              >
                 {user.name || user.email}
               </span>
               <button
@@ -65,9 +74,20 @@ export function Header({ variant = "default" }: { variant?: "default" | "minimal
               </button>
             </>
           ) : (
-            <Link href="/login" className={variant === "minimal" ? "btn-outline" : "btn-mint"}>
-              {variant === "minimal" ? "Log in" : "Join Workspace"}
-            </Link>
+            <>
+              <Link href="/login" className="text-gray-300 hover:text-white">
+                Log in
+              </Link>
+              {variant === "minimal" ? (
+                <Link href="/login?mode=register" className="btn-mint text-sm">
+                  Sign Up
+                </Link>
+              ) : (
+                <Link href="/login" className="btn-mint text-sm">
+                  Join
+                </Link>
+              )}
+            </>
           )}
         </div>
       </nav>

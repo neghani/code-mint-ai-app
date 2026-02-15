@@ -80,7 +80,7 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
       "{{SENDER_NAME}}",
       senderName
     );
-    navigator.clipboard.writeText(text);
+    navigator.clipboard?.writeText(text).catch(() => {});
   }
 
   const isAdmin = members?.find((m) => m.userId === currentUserId)?.role === "admin";
@@ -224,7 +224,7 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
           </div>
         )}
 
-        {orgItems && orgItems.data.length > 0 && (
+        {orgItems?.data && orgItems.data.length > 0 && (
           <div className="mt-8">
             <h2 className="text-lg font-medium text-white">Org items</h2>
             <p className="mt-1 text-sm text-gray-500">

@@ -24,6 +24,7 @@ export const searchService = {
       tags: params.tags,
       visibility: params.visibility ?? (userId ? "all" : "public"),
       userId: userId ?? undefined,
+      sortBy: params.sortBy,
     };
     if (params.orgId) filters.orgId = params.orgId;
     if (userId && userOrgIds.length > 0 && params.orgId) {

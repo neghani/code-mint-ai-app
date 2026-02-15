@@ -8,6 +8,7 @@ export type SearchFilters = {
   orgId?: string | null;
   visibility?: "public" | "org" | "all";
   userId?: string; // for org membership
+  sortBy?: "createdAt" | "popular";
 };
 
 export type SearchResultItem = {
@@ -22,6 +23,10 @@ export type SearchResultItem = {
   createdAt: Date;
   updatedAt: Date;
   slug: string | null;
+  catalogId: string | null;
+  catalogVersion: string | null;
+  downloadCount: number;
+  copyCount: number;
   tags: { id: string; name: string; category: string }[];
   snippet?: string;
 };
@@ -34,7 +39,7 @@ export async function searchItems(
   filters: SearchFilters,
   options: { skip: number; take: number }
 ): Promise<{ items: SearchResultItem[]; total: number }> {
-  const { q, type, tags, orgId, visibility, userId } = filters;
+  const { q, type, tags, orgId, visibility, userId, sortBy } = filters;
   const { skip, take } = options;
 
   const conditions: string[] = ["1=1"];
@@ -74,7 +79,10 @@ export async function searchItems(
   }
 
   let whereClause = conditions.join(" AND ");
-  let orderClause = "i.created_at DESC";
+  const usePopularSort = sortBy === "popular";
+  let orderClause = usePopularSort
+    ? "(COALESCE(i.download_count, 0) + COALESCE(i.copy_count, 0)) DESC, i.created_at DESC"
+    : "i.created_at DESC";
   let searchSelect = "";
 
   if (q && q.trim()) {
@@ -85,7 +93,9 @@ export async function searchItems(
     const tsVector = "to_tsvector('english', i.title || ' ' || i.content)";
     conditions.push(`${tsVector} @@ ${tsQuery}`);
     whereClause = conditions.join(" AND ");
-    orderClause = `ts_rank(${tsVector}, ${tsQuery}) DESC, i.created_at DESC`;
+    orderClause = usePopularSort
+      ? `ts_rank(${tsVector}, ${tsQuery}) DESC, (COALESCE(i.download_count, 0) + COALESCE(i.copy_count, 0)) DESC, i.created_at DESC`
+      : `ts_rank(${tsVector}, ${tsQuery}) DESC, i.created_at DESC`;
     searchSelect = `, ts_headline('english', i.content, ${tsQuery}, 'MaxFragments=1, MaxWords=35') as snippet`;
   }
 
@@ -97,7 +107,7 @@ export async function searchItems(
   const countResult = await prisma.$queryRawUnsafe<[{ total: number }]>(countSql, ...params);
   const total = countResult[0]?.total ?? 0;
 
-  const selectColumns = `i.id, i.title, i.content, i.type, i.metadata, i.visibility, i.org_id as "orgId", i.created_by as "createdBy", i.created_at as "createdAt", i.updated_at as "updatedAt", i.slug${searchSelect}`;
+  const selectColumns = `i.id, i.title, i.content, i.type, i.metadata, i.visibility, i.org_id as "orgId", i.created_by as "createdBy", i.created_at as "createdAt", i.updated_at as "updatedAt", i.slug, i.catalog_id as "catalogId", i.catalog_version as "catalogVersion", COALESCE(i.download_count, 0) as "downloadCount", COALESCE(i.copy_count, 0) as "copyCount"${searchSelect}`;
   type Row = {
     id: string;
     title: string;
@@ -110,6 +120,10 @@ export async function searchItems(
     createdAt: Date;
     updatedAt: Date;
     slug: string | null;
+    catalogId: string | null;
+    catalogVersion: string | null;
+    downloadCount: number;
+    copyCount: number;
     snippet?: string;
   };
   const dataSql = `
@@ -149,6 +163,10 @@ export async function searchItems(
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
     slug: r.slug ?? null,
+    catalogId: r.catalogId ?? null,
+    catalogVersion: r.catalogVersion ?? null,
+    downloadCount: r.downloadCount ?? 0,
+    copyCount: r.copyCount ?? 0,
     tags: tagMap.get(r.id) ?? [],
     ...(r.snippet != null && { snippet: r.snippet }),
   }));
