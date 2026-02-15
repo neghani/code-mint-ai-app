@@ -1,0 +1,19 @@
+# CodeMintAI — Netlify MVP deployment
+# Build Smart. Build Safe.
+# Netlify auto-detects Next.js and uses OpenNext adapter.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Env vars (set in Netlify UI: Site settings > Environment variables):
+# DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

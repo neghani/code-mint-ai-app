@@ -1,0 +1,15 @@
+# CodeMintAI does not start its own Postgres.
+# Use an existing Postgres instance (e.g. another project's container) and create a database:
+#
+#   docker exec -it <postgres_container_name> psql -U postgres -c "CREATE DATABASE codemint;"
+#
+# Then in .env:
+#   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/codemint"
+#
+# Run app locally:
+#   npx prisma db push && npx prisma db seed
+#   npm run dev
+#
+# (No services — remove this file or add a db service on a different port if you want a dedicated instance.)
+
+services: {}

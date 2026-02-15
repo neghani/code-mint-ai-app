@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  passwordHash       String         @map("password_hash")
+  name               String?
+  createdAt          DateTime       @default(now()) @map("created_at")
+  orgMembers         OrgMember[]
+  organizationsCreated Organization[]
+  apiTokens          ApiToken[]
+}
+
+model ApiToken {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  name       String   @default("CLI")
+  tokenHash  String   @unique @map("token_hash")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("api_tokens")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  createdByUser User  @relation(fields: [createdBy], references: [id])
+  members   OrgMember[]
+  invites   Invite[]
+  items     Item[]
+}
+
+model OrgMember {
+  id        String   @id @default(cuid())
+  orgId     String   @map("org_id")
+  userId    String   @map("user_id")
+  role      OrgRole  @default(member)
+  status    MemberStatus @default(active)
+  createdAt DateTime @default(now()) @map("created_at")
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([orgId, userId])
+  @@map("org_members")
+}
+
+enum OrgRole {
+  admin
+  member
+  viewer
+}
+
+enum MemberStatus {
+  invited
+  active
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  orgId     String   @map("org_id")
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  @@index([token])
+  @@index([orgId, email])
+}
+
+model Item {
+  id              String     @id @default(cuid())
+  title           String
+  content         String     @db.Text
+  type            ItemType
+  metadata        Json?      @default("{}")
+  visibility      ItemVisibility @default(org)
+  orgId           String?    @map("org_id")
+  createdBy       String     @map("created_by")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  slug            String?
+  catalogId       String?    @map("catalog_id")
+  catalogVersion  String?    @map("catalog_version")
+  org             Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  tags            ItemTag[]
+  @@index([orgId])
+  @@index([visibility])
+  @@index([type])
+  @@index([createdAt])
+  @@index([orgId, type])
+  @@index([type, slug])
+  @@index([catalogId, catalogVersion])
+}
+
+enum ItemType {
+  rule
+  prompt
+  skill
+}
+
+enum ItemVisibility {
+  public
+  org
+}
+
+model Tag {
+  id       String   @id @default(cuid())
+  name     String   @unique
+  category TagCategory @default(tech)
+  items    ItemTag[]
+  @@index([category])
+}
+
+enum TagCategory {
+  tech
+  job
+  domain
+  tool
+}
+
+model ItemTag {
+  itemId String
+  tagId  String  @map("tag_id")
+  item   Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([itemId, tagId])
+  @@index([tagId])
+  @@map("item_tags")
+}

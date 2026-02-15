@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+✅ Clean Code Rules (Compact Form)
+Use short, clear names → getUser() not fetchUserDataFromDbLayer
+One function = one responsibility
+Keep functions ≤ 30 lines
+Avoid deep nesting → max 2–3 levels
+Prefer early returns over big if–else blocks
+Remove dead code immediately
+No magic numbers → use constants
+Keep files focused → one module = one concern
+Prefer pure functions where possible
+Make side effects explicit
+🧠 Token Optimization Rules for AI Coding
+Use short identifiers but meaningful → cfg, ctx, req
+Avoid verbose comments → comment only intent, not mechanics
+Prefer patterns over prose → show example instead of explanation
+Reuse helpers instead of re-implementing logic
+Avoid long logs / debug strings
+Use enums/constants instead of repeated literals
+Prefer tables/maps over long condition chains
+Return structured objects, not story text
+Don’t restate obvious types in names → avoid userObjectData
+Don't explain too much after the job
+Don't create document unless asked 
+
+✂️ Prompting Rules for Agent Code Generation
+Specify output format → “return code only”
+Define constraints in bullets
+Give minimal context + exact goal
+Provide skeletons instead of descriptions
+Say what to avoid → “no comments”, “no tests”, etc.
+Ask for diffs/patches instead of full files when updating
+⚡ Micro Style Guide
+Flat > clever
+Explicit > implicit
+Small > generic
+Deterministic > dynamic
+Consistent > perfect

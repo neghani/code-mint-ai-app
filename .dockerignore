@@ -1,0 +1,26 @@
+# Dependencies and build output (rebuilt in container)
+node_modules
+.next
+out
+dist
+build
+
+# Git and IDE
+.git
+.idea
+.vscode
+
+# Env (set at runtime)
+.env
+.env.*
+!.env.example
+
+# Misc
+*.log
+.DS_Store
+README.md
+development_plan.md
+readme.md
+DEPLOY.md
+
+# Keep prisma/ and src/ - do not add them here
