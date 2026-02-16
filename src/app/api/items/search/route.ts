@@ -15,7 +15,7 @@ const ANON_MAX_PAGE_SIZE = 25;
 
 const VALID_TYPES = ["rule", "prompt", "skill"] as const;
 
-/** CLI suggest contract: item shape with id, name, type, slug, catalogId, version, tags[], score */
+/** CLI suggest contract: item shape with id, name, type, slug, catalogId, version, tags[], score, optional snippet */
 export type SuggestItem = {
   id: string;
   name: string;
@@ -25,6 +25,7 @@ export type SuggestItem = {
   version: string;
   tags: string[];
   score: number;
+  snippet?: string;
 };
 
 function toSuggestItem(item: SearchResultItem): SuggestItem {
@@ -42,7 +43,7 @@ function toSuggestItem(item: SearchResultItem): SuggestItem {
   const usage = (item.downloadCount ?? 0) + (item.copyCount ?? 0);
   const score = Math.min(100, Math.round(50 + Math.min(50, usage)));
   const tags = item.tags ?? [];
-  return {
+  const out: SuggestItem = {
     id: item.id,
     name: item.title,
     type: item.type,
@@ -52,6 +53,8 @@ function toSuggestItem(item: SearchResultItem): SuggestItem {
     tags: Array.isArray(tags) ? tags.map((t) => (typeof t === "object" && t && "name" in t ? t.name : String(t))) : [],
     score,
   };
+  if (item.snippet != null) out.snippet = item.snippet;
+  return out;
 }
 
 export async function GET(req: NextRequest) {
