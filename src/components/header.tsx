@@ -45,7 +45,7 @@ export function Header({ variant = "default" }: { variant?: "default" | "minimal
         </Link>
 
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/explore" className="text-gray-300 hover:text-white">
+          <Link href="/explore/skills" className="text-gray-300 hover:text-white">
             Explore
           </Link>
 

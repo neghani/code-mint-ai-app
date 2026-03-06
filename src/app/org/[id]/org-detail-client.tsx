@@ -244,7 +244,7 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
               ))}
             </ul>
             <Link
-              href={`/explore?visibility=org&org=${orgId}`}
+              href={`/explore/all?visibility=org&org=${orgId}`}
               className="mt-2 inline-block text-sm text-mint-400 hover:underline"
             >
               View all in Explore →

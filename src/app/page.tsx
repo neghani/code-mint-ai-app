@@ -21,26 +21,16 @@ function useAuth() {
 function HeroCTA() {
   const { user, isLoading } = useAuth();
   if (isLoading) return null;
-  if (user) {
-    return (
-      <div className="mt-8 flex flex-wrap justify-center gap-4">
-        <Link href="/explore" className="btn-mint">
-          Go to Explore
-        </Link>
-        <Link href="/mint" className="btn-outline">
-          Mint New Item
-        </Link>
-      </div>
-    );
-  }
   return (
     <div className="mt-8 flex flex-wrap justify-center gap-4">
-      <Link href="/explore" className="btn-mint">
-        Explore Catalog
+      <Link href="/explore/skills" className="btn-mint">
+        Explore
       </Link>
-      <Link href="/login" className="btn-outline">
-        Sign Up Free
-      </Link>
+      {!user && (
+        <Link href="/login" className="btn-outline">
+          Sign Up
+        </Link>
+      )}
     </div>
   );
 }
@@ -48,26 +38,16 @@ function HeroCTA() {
 function BottomCTA() {
   const { user, isLoading } = useAuth();
   if (isLoading) return null;
-  if (user) {
-    return (
-      <div className="mt-8 flex justify-center gap-4">
-        <Link href="/explore" className="btn-mint">
-          Browse Rules & Skills
-        </Link>
-        <Link href="/org" className="btn-outline">
-          Manage Orgs
-        </Link>
-      </div>
-    );
-  }
   return (
     <div className="mt-8 flex justify-center gap-4">
-      <Link href="/explore" className="btn-mint">
-        Explore Public Library
+      <Link href="/explore/skills" className="btn-mint">
+        Explore
       </Link>
-      <Link href="/login" className="btn-outline">
-        Create Account
-      </Link>
+      {!user && (
+        <Link href="/login" className="btn-outline">
+          Sign Up
+        </Link>
+      )}
     </div>
   );
 }
@@ -330,7 +310,7 @@ export default function HomePage() {
               >
                 LinkedIn
               </a>
-              <Link href="/explore" className="hover:text-white">
+              <Link href="/explore/skills" className="hover:text-white">
                 Explore
               </Link>
               <Link href="/login" className="hover:text-white">

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
-import type { ItemType, ItemVisibility } from "@prisma/client";
+
+type ItemType = "rule" | "prompt" | "skill";
+type ItemVisibility = "public" | "org";
 
 export type CreateItemInput = {
   title: string;
@@ -7,7 +9,7 @@ export type CreateItemInput = {
   type: ItemType;
   metadata?: object;
   visibility: ItemVisibility;
-  orgId: string | null;
+  orgId?: string | null;
   createdBy: string;
   tagIds?: string[];
   slug?: string | null;
@@ -28,30 +30,40 @@ export type UpdateItemInput = Partial<{
   catalogVersion: string | null;
 }>;
 
+const TAG_INCLUDE = { tags: { include: { tag: true } } };
+
 export const itemRepo = {
   async create(data: CreateItemInput) {
-    const { tagIds, ...rest } = data;
-    const item = await prisma.item.create({
-      data: {
-        ...rest,
-        ...(tagIds?.length
-          ? { tags: { create: tagIds.map((tagId) => ({ tagId })) } }
-          : {}),
-      },
-      include: { tags: { include: { tag: true } } },
+    const { tagIds, orgId, slug, catalogId, catalogVersion, metadata, ...required } = data;
+    
+    const prismaData = {
+      ...required,
+      ...(orgId && { orgId }),
+      ...(slug && { slug }),
+      ...(catalogId && { catalogId }),
+      ...(catalogVersion && { catalogVersion }),
+      ...(metadata && { metadata }),
+      ...(tagIds?.length && {
+        tags: { create: tagIds.map((tagId) => ({ tagId })) },
+      }),
+    };
+
+    return prisma.item.create({
+      data: prismaData,
+      include: TAG_INCLUDE,
     });
-    return item;
   },
 
   async findById(id: string) {
     return prisma.item.findUnique({
       where: { id },
-      include: { tags: { include: { tag: true } } },
+      include: TAG_INCLUDE,
     });
   },
 
   async update(id: string, data: UpdateItemInput) {
     const { tagIds, ...rest } = data;
+    
     if (tagIds !== undefined) {
       await prisma.itemTag.deleteMany({ where: { itemId: id } });
       if (tagIds.length > 0) {
@@ -60,10 +72,22 @@ export const itemRepo = {
         });
       }
     }
+
+    const updateData: Parameters<typeof prisma.item.update>[0]["data"] = {};
+    if (rest.title !== undefined) updateData.title = rest.title;
+    if (rest.content !== undefined) updateData.content = rest.content;
+    if (rest.type !== undefined) updateData.type = rest.type;
+    if (rest.visibility !== undefined) updateData.visibility = rest.visibility;
+    if (rest.orgId !== undefined) updateData.orgId = rest.orgId;
+    if (rest.slug !== undefined) updateData.slug = rest.slug;
+    if (rest.catalogId !== undefined) updateData.catalogId = rest.catalogId;
+    if (rest.catalogVersion !== undefined) updateData.catalogVersion = rest.catalogVersion;
+    if (rest.metadata !== undefined) updateData.metadata = rest.metadata;
+
     return prisma.item.update({
       where: { id },
-      data: rest,
-      include: { tags: { include: { tag: true } } },
+      data: updateData,
+      include: TAG_INCLUDE,
     });
   },
 
@@ -74,25 +98,27 @@ export const itemRepo = {
   async findByTypeAndSlug(type: ItemType, slug: string) {
     return prisma.item.findFirst({
       where: { type, slug },
-      include: { tags: { include: { tag: true } } },
+      include: TAG_INCLUDE,
     });
   },
 
   async findByCatalogId(catalogId: string, version?: string | null) {
     return prisma.item.findFirst({
-      where: version
-        ? { catalogId, catalogVersion: version }
-        : { catalogId },
-      include: { tags: { include: { tag: true } } },
+      where: {
+        catalogId,
+        ...(version && { catalogVersion: version }),
+      },
+      include: TAG_INCLUDE,
       orderBy: { updatedAt: "desc" },
     });
   },
 
   async findManyByCatalogIds(catalogIds: string[]) {
-    if (catalogIds.length === 0) return [];
+    if (!catalogIds.length) return [];
+    
     return prisma.item.findMany({
       where: { catalogId: { in: catalogIds }, visibility: "public" },
-      include: { tags: { include: { tag: true } } },
+      include: TAG_INCLUDE,
       orderBy: { catalogVersion: "desc" },
     });
   },

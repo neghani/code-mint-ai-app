@@ -89,7 +89,10 @@ export default async function CliAuthPage({
           </code>
           . Use &quot;Copy add command&quot; on any rule/skill that has a slug.
         </p>
-        <Link href="/explore" className="mt-6 inline-block text-sm text-gray-500 hover:text-gray-400">
+        <Link
+          href="/explore/skills"
+          className="mt-6 inline-block text-sm text-gray-500 hover:text-gray-400"
+        >
           ← Back to Explore
         </Link>
       </main>

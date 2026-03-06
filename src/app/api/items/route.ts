@@ -38,22 +38,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createSchema.parse(body);
 
-    let resolvedTagIds = data.tagIds ?? [];
-    if (data.tagNames?.length) {
-      const created = await tagRepo.findOrCreateMany(data.tagNames);
-      const newIds = created.map((t) => t.id);
-      resolvedTagIds = [...new Set([...resolvedTagIds, ...newIds])];
-    }
+    const resolvedTagIds = [
+      ...new Set([
+        ...(data.tagIds ?? []),
+        ...(data.tagNames?.length
+          ? (await tagRepo.findOrCreateMany(data.tagNames)).map((t) => t.id)
+          : []),
+      ]),
+    ];
 
     const item = await itemService.create(
       {
         ...data,
         tagIds: resolvedTagIds,
-        orgId: data.orgId ?? null,
+        ...(data.orgId && { orgId: data.orgId }),
         createdBy: auth.userId,
-        slug: data.slug ?? undefined,
-        catalogId: data.catalogId ?? undefined,
-        catalogVersion: data.catalogVersion ?? undefined,
       },
       auth.userId
     );

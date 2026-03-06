@@ -20,7 +20,8 @@ function LoginForm() {
   const inviteToken = searchParams.get("token") ?? undefined;
   const nextUrl = searchParams.get("next") ?? undefined;
   const decoded = nextUrl ? safeDecode(nextUrl) : "";
-  const redirectTo = decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "/explore";
+  const redirectTo =
+    decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "/explore/skills";
   const modeParam = searchParams.get("mode");
   const initialMode = modeParam === "register" ? "register" : "login";
   const [mode, setMode] = useState<"login" | "register">(initialMode);
