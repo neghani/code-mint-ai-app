@@ -19,6 +19,8 @@ const createSchema = z
     slug: z.string().min(1).nullable().optional(),
     catalogId: z.string().min(1).nullable().optional(),
     catalogVersion: z.string().min(1).nullable().optional(),
+    applyMode: z.enum(["always", "auto", "glob", "manual"]).optional(),
+    globs: z.string().nullable().optional(),
   })
   .refine((data) => data.visibility !== "org" || data.orgId != null, {
     message: "orgId is required when visibility is org",
@@ -59,6 +61,9 @@ export async function POST(req: NextRequest) {
     );
     return NextResponse.json(item);
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

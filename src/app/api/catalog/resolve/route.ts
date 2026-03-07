@@ -64,9 +64,11 @@ export async function GET(req: NextRequest) {
     slug: item.slug,
     catalogId: item.catalogId,
     catalogVersion: item.catalogVersion,
+    applyMode: item.applyMode,
+    globs: item.globs ?? null,
     checksum: (meta.checksum as string) ?? null,
     deprecated: (meta.deprecated as boolean) ?? false,
     changelog: (meta.changelog as string) ?? null,
-    tags: item.tags.map((t) => t.tag.name),
+    tags: item.tags?.map((t) => t.tag.name) ?? [],
   });
 }

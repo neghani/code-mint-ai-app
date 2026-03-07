@@ -15,6 +15,8 @@ export type CreateItemInput = {
   slug?: string | null;
   catalogId?: string | null;
   catalogVersion?: string | null;
+  applyMode?: "always" | "auto" | "glob" | "manual";
+  globs?: string | null;
 };
 
 export type UpdateItemInput = Partial<{
@@ -28,21 +30,25 @@ export type UpdateItemInput = Partial<{
   slug: string | null;
   catalogId: string | null;
   catalogVersion: string | null;
+  applyMode: "always" | "auto" | "glob" | "manual";
+  globs: string | null;
 }>;
 
 const TAG_INCLUDE = { tags: { include: { tag: true } } };
 
 export const itemRepo = {
   async create(data: CreateItemInput) {
-    const { tagIds, orgId, slug, catalogId, catalogVersion, metadata, ...required } = data;
+    const { tagIds, orgId, slug, catalogId, catalogVersion, metadata, applyMode, globs, ...required } = data;
     
     const prismaData = {
       ...required,
       ...(orgId && { orgId }),
-      ...(slug && { slug }),
+      ...(slug != null && { slug }),
       ...(catalogId && { catalogId }),
       ...(catalogVersion && { catalogVersion }),
       ...(metadata && { metadata }),
+      ...(applyMode && { applyMode }),
+      ...(globs != null && { globs }),
       ...(tagIds?.length && {
         tags: { create: tagIds.map((tagId) => ({ tagId })) },
       }),
@@ -83,6 +89,8 @@ export const itemRepo = {
     if (rest.catalogId !== undefined) updateData.catalogId = rest.catalogId;
     if (rest.catalogVersion !== undefined) updateData.catalogVersion = rest.catalogVersion;
     if (rest.metadata !== undefined) updateData.metadata = rest.metadata;
+    if (rest.applyMode !== undefined) updateData.applyMode = rest.applyMode;
+    if (rest.globs !== undefined) updateData.globs = rest.globs;
 
     return prisma.item.update({
       where: { id },

@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type User = { id: string; email: string; name: string | null } | null;
 
 async function fetchMe(): Promise<{ user: User }> {
-  const res = await fetch("/api/auth/me", {
-    credentials: "include",
-    cache: "no-store",
-  });
+  const res = await fetchWithAuth("/api/auth/me", { cache: "no-store" });
   return res.json();
 }
 

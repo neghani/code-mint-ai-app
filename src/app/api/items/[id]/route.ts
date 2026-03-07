@@ -17,6 +17,8 @@ const updateSchema = z.object({
   slug: z.string().min(1).nullable().optional(),
   catalogId: z.string().min(1).nullable().optional(),
   catalogVersion: z.string().min(1).nullable().optional(),
+  applyMode: z.enum(["always", "auto", "glob", "manual"]).optional(),
+  globs: z.string().nullable().optional(),
 });
 
 export async function GET(
@@ -48,6 +50,9 @@ export async function PUT(
     const item = await itemService.update(id, data, auth.userId, userOrgIds);
     return NextResponse.json(item);
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

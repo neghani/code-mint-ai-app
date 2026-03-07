@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     const org = await inviteService.accept(token, auth.userId);
     return NextResponse.json(org);
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

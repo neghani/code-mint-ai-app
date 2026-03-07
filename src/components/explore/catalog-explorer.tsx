@@ -11,6 +11,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type ItemType = "rule" | "prompt" | "skill";
 type Visibility = "public" | "org" | "all";
@@ -28,6 +29,8 @@ type SearchItem = {
   copyCount: number;
   tags: { id: string; name: string; category: string }[];
   snippet?: string;
+  applyMode?: string;
+  globs?: string | null;
 };
 
 type SearchResponse = {
@@ -131,7 +134,7 @@ export function CatalogExplorer({
   const { data: authData } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetchWithAuth("/api/auth/me");
       return res.json();
     },
   });
@@ -140,7 +143,7 @@ export function CatalogExplorer({
   const { data: tagsData } = useQuery<{ id: string; name: string; category: string }[]>({
     queryKey: ["tags"],
     queryFn: async () => {
-      const res = await fetch("/api/tags", { credentials: "include" });
+      const res = await fetchWithAuth("/api/tags");
       if (!res.ok) throw new Error("Failed to load tags");
       return res.json();
     },
@@ -169,7 +172,7 @@ export function CatalogExplorer({
         page,
         limit: 25,
       });
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetchWithAuth(url);
       if (!res.ok) throw new Error("Search failed");
       return res.json();
     },
@@ -287,7 +290,7 @@ export function CatalogExplorer({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const totalPages = data ? Math.max(1, Math.ceil((data.total ?? 0) / (data.pageSize || 1))) : 1;
 
   return (
     <div className="min-h-screen">
@@ -458,7 +461,7 @@ export function CatalogExplorer({
           )}
         </div>
 
-        {data && data.data.length === 0 && !isLoading && (
+        {data && (data?.data?.length ?? 0) === 0 && !isLoading && (
           <p className="mt-8 text-center text-gray-500">
             No results yet. Try another keyword, tag, or scope.
           </p>

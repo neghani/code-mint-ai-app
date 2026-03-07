@@ -38,6 +38,9 @@ export async function POST(req: Request) {
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type Tag = { id: string; name: string; category: string };
 type Org = { id: string; name: string };
@@ -226,7 +227,7 @@ export default function MintPage() {
   const { data: existingTags = [] } = useQuery<Tag[]>({
     queryKey: ["tags"],
     queryFn: async () => {
-      const res = await fetch("/api/tags", { credentials: "include" });
+      const res = await fetchWithAuth("/api/tags");
       if (!res.ok) throw new Error("Failed to load tags");
       return res.json();
     },
@@ -235,7 +236,7 @@ export default function MintPage() {
   const { data: me } = useQuery<{ user: unknown }>({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetchWithAuth("/api/auth/me");
       return res.json();
     },
   });
@@ -244,11 +245,10 @@ export default function MintPage() {
   const { data: orgs = [] } = useQuery<Org[]>({
     queryKey: ["org", "my"],
     queryFn: async () => {
-      const res = await fetch("/api/org/my", { credentials: "include" });
-      if (res.status === 401) return [];
+      const res = await fetchWithAuth("/api/org/my");
       if (!res.ok) return [];
       const list = await res.json();
-      return list.map((o: Org) => ({ id: o.id, name: o.name }));
+      return Array.isArray(list) ? list.map((o: Org) => ({ id: o.id, name: o.name })) : [];
     },
   });
 
@@ -261,11 +261,10 @@ export default function MintPage() {
       orgId: string | null;
       tagNames: string[];
     }) => {
-      const res = await fetch("/api/items", {
+      const res = await fetchWithAuth("/api/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        credentials: "include",
       });
       if (!res.ok) {
         const d = await res.json();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 const INVITE_MESSAGE_TEMPLATE = `Hi,
 
@@ -35,7 +36,7 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
   const { data: me } = useQuery<{ user: { id: string; name: string | null; email: string } | null }>({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetchWithAuth("/api/auth/me");
       return res.json();
     },
   });
@@ -45,8 +46,7 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
   const { data: members, isLoading, error } = useQuery<Member[]>({
     queryKey: ["org", orgId, "members"],
     queryFn: async () => {
-      const res = await fetch(`/api/org/${orgId}/members`, { credentials: "include" });
-      if (res.status === 401) throw new Error("Unauthorized");
+      const res = await fetchWithAuth(`/api/org/${orgId}/members`);
       if (res.status === 404) throw new Error("Not found");
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
@@ -55,11 +55,10 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
 
   const createInvite = useMutation({
     mutationFn: async (email: string) => {
-      const res = await fetch(`/api/org/${orgId}/invite`, {
+      const res = await fetchWithAuth(`/api/org/${orgId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-        credentials: "include",
       });
       if (!res.ok) {
         const d = await res.json();
@@ -87,11 +86,10 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
 
   const updateRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const res = await fetch(`/api/org/${orgId}/members/${userId}`, {
+      const res = await fetchWithAuth(`/api/org/${orgId}/members/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role }),
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update role");
       return res.json();
@@ -104,11 +102,10 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
   const { data: orgItems } = useQuery<{ data: { id: string; title: string; type: string }[] }>({
     queryKey: ["items", "search", orgId, "org"],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/items/search?org=${encodeURIComponent(orgId)}&visibility=org&limit=20`,
-        { credentials: "include" }
+      const res = await fetchWithAuth(
+        `/api/items/search?org=${encodeURIComponent(orgId)}&visibility=org&limit=20`
       );
-      if (!res.ok) return { data: [] };
+      if (!res.ok) throw new Error("Failed to load org items");
       return res.json();
     },
   });
@@ -194,6 +191,9 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
         {members && (
           <div className="mt-6">
             <h2 className="text-lg font-medium text-white">Members</h2>
+            {members.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-500">No members yet. Invite someone above.</p>
+            ) : (
             <ul className="mt-3 space-y-2">
               {members.map((m) => (
                 <li
@@ -221,10 +221,11 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
                 </li>
               ))}
             </ul>
+            )}
           </div>
         )}
 
-        {orgItems?.data && orgItems.data.length > 0 && (
+        {orgItems?.data != null && orgItems.data.length > 0 && (
           <div className="mt-8">
             <h2 className="text-lg font-medium text-white">Org items</h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -249,6 +250,12 @@ export function OrgDetailClient({ orgId }: { orgId: string }) {
             >
               View all in Explore →
             </Link>
+          </div>
+        )}
+        {orgItems?.data != null && orgItems.data.length === 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-medium text-white">Org items</h2>
+            <p className="mt-2 text-sm text-gray-500">No items in this organization yet.</p>
           </div>
         )}
       </main>

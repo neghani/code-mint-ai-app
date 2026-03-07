@@ -24,6 +24,9 @@ export async function PATCH(
     const member = org?.members.find((m) => m.userId === userId);
     return NextResponse.json(member ?? { role });
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

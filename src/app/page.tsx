@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type User = { id: string; email: string; name: string | null } | null;
 
@@ -10,7 +11,7 @@ function useAuth() {
   const { data, isLoading } = useQuery<{ user: User }>({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetchWithAuth("/api/auth/me");
       return res.json();
     },
     staleTime: 60 * 1000,

@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
             catalogVersion: item.catalogVersion,
             slug: item.slug,
             type: item.type,
+            applyMode: item.applyMode,
+            globs: item.globs ?? null,
             tags: item.tags?.map((t: { tag: { name: string } }) => t.tag.name) ?? [],
             checksum: (meta.checksum as string) ?? null,
             deprecated: (meta.deprecated as boolean) ?? false,
@@ -56,6 +58,9 @@ export async function POST(req: NextRequest) {
     const result = catalogIds.map((id) => byCatalogId.get(id) ?? null);
     return NextResponse.json({ items: result });
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

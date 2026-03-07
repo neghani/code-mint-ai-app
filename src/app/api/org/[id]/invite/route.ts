@@ -24,6 +24,9 @@ export async function POST(
     const inviteLink = `${baseUrl}/invite/accept?token=${invite.token}`;
     return NextResponse.json({ invite, inviteLink });
   } catch (e) {
+    if (e instanceof SyntaxError) {
+      return apiError("invalid_request", "Invalid JSON", 400);
+    }
     if (e instanceof z.ZodError) {
       return apiError("validation_error", "Validation failed", 400);
     }

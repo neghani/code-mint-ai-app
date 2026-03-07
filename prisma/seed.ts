@@ -7,6 +7,8 @@ const prisma = new PrismaClient();
 
 const BATCH_SIZE = 50;
 
+type ApplyModeSeed = "always" | "auto" | "glob" | "manual";
+
 type SeedData = {
   tags?: { name: string; category?: string }[];
   items?: {
@@ -16,6 +18,8 @@ type SeedData = {
     visibility?: "public" | "org";
     slug?: string;
     tags?: string[];
+    applyMode?: ApplyModeSeed;
+    globs?: string;
   }[];
 };
 
@@ -92,6 +96,9 @@ async function seedFromFile(data: SeedData, createdBy: string) {
         .map((n) => tagIds.get(n.toLowerCase().trim()))
         .filter(Boolean) as string[];
 
+      const applyMode = (it.applyMode as "always" | "auto" | "glob" | "manual") ?? "auto";
+      const globs = it.globs ?? null;
+
       await prisma.item.upsert({
         where: { id: `seed-${slug}` },
         create: {
@@ -102,11 +109,13 @@ async function seedFromFile(data: SeedData, createdBy: string) {
           visibility: it.visibility ?? "public",
           createdBy,
           slug: it.slug ?? slug,
+          applyMode,
+          globs,
           tags: tagIdsForItem.length
             ? { create: tagIdsForItem.map((tagId) => ({ tagId })) }
             : undefined,
         },
-        update: { title: it.title, content: it.content },
+        update: { title: it.title, content: it.content, applyMode, globs },
       });
     }
   }

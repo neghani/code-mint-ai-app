@@ -48,6 +48,8 @@ export type SearchResultItem = {
   slug: string | null;
   catalogId: string | null;
   catalogVersion: string | null;
+  applyMode: "always" | "auto" | "glob" | "manual";
+  globs: string | null;
   downloadCount: number;
   copyCount: number;
   tags: { id: string; name: string; category: string }[];
@@ -137,7 +139,7 @@ export async function searchItems(
     throw new Error(`Search count failed: ${msg}`);
   }
 
-  const selectColumns = `i.id, i.title, i.content, i.type, i.metadata, i.visibility, i.org_id as "orgId", i.created_by as "createdBy", i.created_at as "createdAt", i.updated_at as "updatedAt", i.slug, i.catalog_id as "catalogId", i.catalog_version as "catalogVersion", COALESCE(i.download_count, 0) as "downloadCount", COALESCE(i.copy_count, 0) as "copyCount"${searchSelect}`;
+  const selectColumns = `i.id, i.title, i.content, i.type, i.metadata, i.visibility, i.org_id as "orgId", i.created_by as "createdBy", i.created_at as "createdAt", i.updated_at as "updatedAt", i.slug, i.catalog_id as "catalogId", i.catalog_version as "catalogVersion", i.apply_mode as "applyMode", i.globs, COALESCE(i.download_count, 0) as "downloadCount", COALESCE(i.copy_count, 0) as "copyCount"${searchSelect}`;
   type Row = {
     id: string;
     title: string;
@@ -152,6 +154,8 @@ export async function searchItems(
     slug: string | null;
     catalogId: string | null;
     catalogVersion: string | null;
+    applyMode: "always" | "auto" | "glob" | "manual";
+    globs: string | null;
     downloadCount: number;
     copyCount: number;
     snippet?: string;
@@ -202,6 +206,8 @@ export async function searchItems(
     slug: r.slug ?? null,
     catalogId: r.catalogId ?? null,
     catalogVersion: r.catalogVersion ?? null,
+    applyMode: r.applyMode ?? "auto",
+    globs: r.globs ?? null,
     downloadCount: r.downloadCount ?? 0,
     copyCount: r.copyCount ?? 0,
     tags: tagMap.get(r.id) ?? [],

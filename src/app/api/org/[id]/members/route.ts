@@ -15,7 +15,7 @@ export async function GET(
   if (orgCtx instanceof NextResponse) return orgCtx;
   const org = await orgRepo.findById(orgId);
   if (!org) return apiError("not_found", "Not found", 404);
-  const members = org.members
+  const members = (org.members ?? [])
     .filter((m) => m.status === "active")
     .map((m) => ({
       id: m.id,

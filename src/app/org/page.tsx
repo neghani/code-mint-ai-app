@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type Org = {
   id: string;
@@ -20,8 +21,7 @@ export default function OrgPage() {
   const { data: orgs, isLoading, error } = useQuery<Org[]>({
     queryKey: ["org", "my"],
     queryFn: async () => {
-      const res = await fetch("/api/org/my", { credentials: "include" });
-      if (res.status === 401) throw new Error("Unauthorized");
+      const res = await fetchWithAuth("/api/org/my");
       if (!res.ok) throw new Error("Failed to load orgs");
       return res.json();
     },
@@ -29,11 +29,10 @@ export default function OrgPage() {
 
   const createOrg = useMutation({
     mutationFn: async (name: string) => {
-      const res = await fetch("/api/org", {
+      const res = await fetchWithAuth("/api/org", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-        credentials: "include",
       });
       if (!res.ok) {
         const d = await res.json();

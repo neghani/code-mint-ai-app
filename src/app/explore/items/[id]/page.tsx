@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Header } from "@/components/header";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type ItemType = "rule" | "prompt" | "skill";
 
@@ -167,7 +168,7 @@ export default function ItemDetailPage() {
   const { data, isLoading, error } = useQuery<ItemDetail>({
     queryKey: ["item", id],
     queryFn: async () => {
-      const res = await fetch(`/api/items/${id}`, { credentials: "include" });
+      const res = await fetchWithAuth(`/api/items/${id}`);
       if (!res.ok) {
         throw new Error("Failed to load item");
       }
@@ -218,7 +219,7 @@ export default function ItemDetailPage() {
 
               {data.tags && data.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {data.tags.map((t, index) => (
+                  {(data.tags ?? []).map((t, index) => (
                     <span
                       key={t.id || `tag-${index}-${t.name}`}
                       className="rounded bg-charcoal-700 px-2 py-0.5 text-xs text-gray-300"
