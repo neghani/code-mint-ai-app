@@ -15,7 +15,15 @@ function getIp(req: NextRequest): string {
   return "unknown";
 }
 
+function prune(): void {
+  const now = Date.now();
+  for (const [k, v] of store.entries()) {
+    if (now >= v.resetAt) store.delete(k);
+  }
+}
+
 function checkLimit(ip: string): boolean {
+  prune();
   const now = Date.now();
   const entry = store.get(ip);
   if (!entry || now >= entry.resetAt) {

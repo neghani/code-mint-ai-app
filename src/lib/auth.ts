@@ -2,12 +2,15 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-min-32-characters-long"
-);
-const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-32-characters"
-);
+if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+  throw new Error("JWT_SECRET and JWT_REFRESH_SECRET must be set");
+}
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_APP_URL) {
+  throw new Error("NEXT_PUBLIC_APP_URL must be set in production");
+}
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET);
 
 const ACCESS_TTL = "15m";
 const REFRESH_TTL = "7d";

@@ -21,6 +21,7 @@ function getKey(id: string): { count: number; resetAt: number } {
  * Returns true if allowed, false if over limit. Call before doing work.
  */
 export function checkRateLimit(key: string, limitPerMin: number): boolean {
+  prune();
   const { count } = getKey(key);
   return count <= limitPerMin;
 }

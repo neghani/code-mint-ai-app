@@ -95,7 +95,7 @@ export async function searchItems(
 
   if (tags && tags.length > 0) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tags it JOIN "Tag" t ON t.id = it.tag_id WHERE it.item_id = i.id AND t.name = ANY($${paramIndex}::text[]))`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN "Tag" t ON t.id = it.tag_id WHERE it."itemId" = i.id AND t.name = ANY($${paramIndex}::text[]))`
     );
     params.push(tags);
     paramIndex++;

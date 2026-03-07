@@ -16,7 +16,7 @@ Netlify runs **production install only** (`npm install` without devDependencies)
 | `@types/react`     | Type check (Next requires it) |
 | `@types/react-dom` | Type check (Next requires it) |
 | `@types/bcryptjs`  | Type check (prisma/seed.ts) |
-| `prisma`           | `prisma generate` + `prisma db push` in build |
+| `prisma`           | `prisma generate` in build; run `npm run migrate` (or `prisma migrate deploy`) separately to apply migrations |
 | `@prisma/client`   | Generated client used by app |
 | `tailwindcss`      | PostCSS during `next build` |
 | `autoprefixer`     | PostCSS during `next build` |
@@ -30,7 +30,7 @@ npm install --omit=dev
 npm run build
 ```
 
-If that fails, the same error will happen on Netlify. Set `DATABASE_URL` in the environment (or in `.env`) so `prisma db push` can run.
+If that fails, the same error will happen on Netlify. The build does **not** run migrations; you must run `npm run migrate` (or `prisma migrate deploy`) in your deploy pipeline **after** build, with `DATABASE_URL` set.
 
 ---
 
@@ -38,15 +38,17 @@ If that fails, the same error will happen on Netlify. Set `DATABASE_URL` in the 
 
 1. **Connect repo** to Netlify (GitHub/GitLab).
 
-2. **Build** (from `netlify.toml`): command `npm run build`, Node 20.
+2. **Build** (from `netlify.toml`): command `npm run build`, Node 20. The build does **not** apply database migrations.
 
-3. **Environment variables** (Site settings → Environment variables):
-   - `DATABASE_URL` — PostgreSQL (e.g. Neon, Supabase). **Required at build time** for `prisma db push`.
+3. **Migrations:** Run `npm run migrate` (i.e. `prisma migrate deploy`) **after** build in your deploy pipeline, with `DATABASE_URL` set. On Netlify, add a post-build command or use a build plugin to run migrations against your production DB. For a **new** database, ensure the initial migration exists in `prisma/migrations/` (e.g. `20260307000000_init`).
+
+4. **Environment variables** (Site settings → Environment variables):
+   - `DATABASE_URL` — PostgreSQL (e.g. Neon, Supabase). **Required** for `npm run migrate` and at runtime.
    - `JWT_SECRET` — min 32 characters
    - `JWT_REFRESH_SECRET` — min 32 characters
    - `NEXT_PUBLIC_APP_URL` — your Netlify site URL (e.g. `https://your-app.netlify.app`)
 
-4. **Invite links** use `NEXT_PUBLIC_APP_URL` (e.g. `https://your-app.netlify.app/login?token=...`).
+5. **Invite links** use `NEXT_PUBLIC_APP_URL` (e.g. `https://your-app.netlify.app/login?token=...`).
 
 ---
 

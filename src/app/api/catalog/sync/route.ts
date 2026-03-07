@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
             catalogId: item.catalogId,
             catalogVersion: item.catalogVersion,
             slug: item.slug,
+            type: item.type,
+            tags: item.tags?.map((t: { tag: { name: string } }) => t.tag.name) ?? [],
             checksum: (meta.checksum as string) ?? null,
             deprecated: (meta.deprecated as boolean) ?? false,
             content: item.content,

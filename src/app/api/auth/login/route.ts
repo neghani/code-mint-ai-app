@@ -7,6 +7,11 @@ import {
   createRefreshToken,
   setAuthCookies,
 } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
+import { apiError } from "@/lib/api-error";
+
+const AUTH_RATE_LIMIT = 10; // req/min per IP
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -14,16 +19,20 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  if (!checkRateLimit(`auth:login:ip:${ip}`, AUTH_RATE_LIMIT)) {
+    return apiError("rate_limited", "Too many requests", 429);
+  }
   try {
     const body = await req.json();
     const { email, password } = bodySchema.parse(body);
     const user = await userRepo.findByEmail(email);
     if (!user) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      return apiError("invalid_credentials", "Invalid email or password", 401);
     }
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      return apiError("invalid_credentials", "Invalid email or password", 401);
     }
     const payload = { sub: user.id, email: user.email };
     const [access, refresh] = await Promise.all([
@@ -38,6 +47,6 @@ export async function POST(req: Request) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: e.flatten() }, { status: 400 });
     }
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+    return apiError("login_failed", "Login failed", 500);
   }
 }

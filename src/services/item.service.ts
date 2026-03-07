@@ -13,7 +13,7 @@ export const itemService = {
   async create(data: CreateItemInput, userId: string) {
     if (data.orgId) {
       const member = await orgRepo.getMember(data.orgId, userId);
-      if (!member) throw new Error("Not a member of this organization");
+      if (!member || member.status !== "active") throw new Error("Not a member of this organization");
     }
     if (data.catalogId && data.catalogVersion) {
       const existing = await itemRepo.findByCatalogId(data.catalogId, data.catalogVersion);
@@ -36,7 +36,8 @@ export const itemService = {
     if (!item) throw new Error("Item not found");
     if (!canAccessOrg(item.orgId, userId, userOrgIds)) throw new Error("Forbidden");
     const member = item.orgId ? await orgRepo.getMember(item.orgId, userId) : null;
-    const isAdmin = member?.role === "admin";
+    if (item.orgId && member && member.status !== "active") throw new Error("Forbidden");
+    const isAdmin = member?.status === "active" && member?.role === "admin";
     if (item.createdBy !== userId && !isAdmin) throw new Error("Forbidden");
     return itemRepo.update(id, data);
   },
@@ -46,7 +47,8 @@ export const itemService = {
     if (!item) throw new Error("Item not found");
     if (!canAccessOrg(item.orgId, userId, userOrgIds)) throw new Error("Forbidden");
     const member = item.orgId ? await orgRepo.getMember(item.orgId, userId) : null;
-    const isAdmin = member?.role === "admin";
+    if (item.orgId && member && member.status !== "active") throw new Error("Forbidden");
+    const isAdmin = member?.status === "active" && member?.role === "admin";
     if (item.createdBy !== userId && !isAdmin) throw new Error("Forbidden");
     return itemRepo.delete(id);
   },

@@ -6,5 +6,15 @@ export async function GET(req: NextRequest) {
   const auth = await requireAuth(req);
   if (auth instanceof NextResponse) return auth;
   const orgs = await orgService.getMyOrgs(auth.userId);
-  return NextResponse.json(orgs);
+  const payload = orgs.map((org) => {
+    const member = org.members.find((m) => m.userId === auth.userId);
+    return {
+      id: org.id,
+      name: org.name,
+      createdAt: org.createdAt,
+      role: member?.role ?? "member",
+      members: org.members,
+    };
+  });
+  return NextResponse.json(payload);
 }

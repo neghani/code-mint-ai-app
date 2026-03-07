@@ -18,7 +18,9 @@ export const inviteService = {
       await inviteRepo.markUsed(invite.id);
       await orgRepo.addMember(invite.orgId, userId, "member");
     });
-    return orgRepo.findById(invite.orgId);
+    const org = await orgRepo.findById(invite.orgId);
+    if (!org) throw new Error("Organization no longer exists");
+    return org;
   },
 
   async listByOrg(orgId: string, userId: string) {

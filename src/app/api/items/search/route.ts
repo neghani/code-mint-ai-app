@@ -87,6 +87,9 @@ export async function GET(req: NextRequest) {
     | "org"
     | "all"
     | undefined;
+  if (visibility === "org" && !org) {
+    return apiError("invalid_request", "org param required when visibility is org", 400);
+  }
   const pageParam = req.nextUrl.searchParams.get("page");
   const limitParam = req.nextUrl.searchParams.get("limit");
   let page = pageParam ? Math.max(1, parseInt(pageParam, 10) || 1) : 1;
@@ -121,7 +124,6 @@ export async function GET(req: NextRequest) {
     );
     const items: SuggestItem[] = (result.data ?? []).map(toSuggestItem);
     return NextResponse.json({
-      data: result.data,
       items,
       total: result.total,
       page: result.page,
