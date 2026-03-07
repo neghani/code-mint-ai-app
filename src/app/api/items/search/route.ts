@@ -6,7 +6,7 @@ import { apiError } from "@/lib/api-error";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
 import { getClientIp } from "@/lib/request-ip";
-import type { SearchResultItem } from "@/lib/search";
+import { DatabaseConnectionError, type SearchResultItem } from "@/lib/search";
 
 const RATE_LIMIT_ANON = 60; // req/min unauthenticated
 const RATE_LIMIT_AUTH = 120; // req/min authenticated
@@ -130,6 +130,9 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     logError("items/search", e);
+    if (e instanceof DatabaseConnectionError) {
+      return apiError("search_unavailable", "Search temporarily unavailable.", 503);
+    }
     return apiError("search_failed", "Search failed", 500);
   }
 }

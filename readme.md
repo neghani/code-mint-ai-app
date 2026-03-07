@@ -1,70 +1,168 @@
-# CodeMintAI
+<p align="center">
+  <img src="icon.png" alt="CodeMint" width="120" />
+</p>
 
-**A shared catalog for AI coding rules and skills — so your team and your tools stay in sync.**
+<h1 align="center">CodeMint</h1>
 
-CodeMintAI is a web app that lets you create, organize, and reuse prompts, rules, and skills across Cursor, Cline, Copilot, Claude, and other AI coding tools. Search by tech stack, share via organizations, and pull rules and skills into any repo with the CLI or VS Code extension.
+<p align="center">
+  <strong>A shared catalog for AI coding rules and skills — so your team and your tools stay in sync.</strong>
+</p>
+
+<p align="center">
+  <a href="https://codemint.app"><img src="https://img.shields.io/badge/website-codemint.app-brightgreen" alt="Website" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=codemint.codemint"><img src="https://img.shields.io/visual-studio-marketplace/v/codemint.codemint?label=VS%20Code%20Extension&color=blue" alt="VS Code Extension" /></a>
+  <a href="https://github.com/neghani/code-mint-cli/releases"><img src="https://img.shields.io/github/v/release/neghani/code-mint-cli?label=CLI&color=orange" alt="CLI" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT License" />
+</p>
+
+<p align="center">
+  Works with <strong>Cursor · Cline · Windsurf · Continue · GitHub Copilot · Claude · Codex</strong>
+</p>
 
 ---
 
-## What it does
+## What is CodeMint?
+
+CodeMint lets you create, organize, and reuse **rules**, **prompts**, and **skills** across all major AI coding tools. Publish items with versioned slugs, search by tech stack, share within organizations, and pull everything into any repo with one command — via the CLI or the VS Code extension.
+
+---
+
+## The Ecosystem
+
+| | |
+|---|---|
+| **[codemint.app](https://codemint.app)** | The hosted catalog — browse, create, and manage rules, prompts, and skills |
+| **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=codemint.codemint)** | Install and sync catalog items directly from VS Code or Cursor |
+| **[CLI](https://github.com/neghani/code-mint-cli)** · [releases →](https://github.com/neghani/code-mint-cli/releases) | Install and sync from the terminal; scriptable and CI-friendly |
+| **This repo** | The self-hostable web app — run your own private CodeMint instance |
+
+> **Public Beta — free to use.**  
+> [codemint.app](https://codemint.app) is free. It may respond slowly under load; please wait if it does. Organizations can self-host this repo for a fully private catalog.
+
+---
+
+## Key Features
 
 - **Catalog** — Publish and version rules and skills with slugs (`@rule/react-best-practices`, `@skill/prisma-patterns`). Full-text search, tags, and visibility (public or org-only).
-- **Teams** — Organizations with roles (admin, member, viewer). Invite by email, keep rules and skills scoped to your org.
-- **CLI & extension** — Install from the catalog into your project. The [CodeMint CLI](docs/cli-integration.md) and VS Code extension resolve refs, write files in the right format per tool (e.g. `.cursor/rules/*.mdc`, `.cline/skills/`), and keep a manifest for sync.
-- **API** — REST API with session or API-token auth. Use it from scripts, CI, or your own tools.
+- **Teams** — Organizations with roles (admin, member, viewer). Invite by email; keep rules and skills scoped to your org.
+- **Tool-agnostic install** — The CLI and extension write files into the correct paths per AI tool (`.cursor/rules/`, `.cline/`, `.github/instructions/`, etc.) and track everything in `.codemint/manifest.json`.
+- **API** — REST API with session or Bearer token auth. Use it from scripts, CI, or your own tooling.
 
 ---
 
-## Who it’s for
+## How It Works
 
-- **Developers** — One place to store and discover rules and skills; install into any repo in one command.
-- **Teams** — Shared org catalog, consistent rules across the team, and control over who can edit.
-- **Tool-agnostic** — Same catalog works with Cursor, Cline, Windsurf, Continue, GitHub Copilot, Claude, and Codex. Install once, target the tools you use.
+1. **Create** — Add rules and skills in the app (or via API). Tag by tech stack (e.g. `tech:react`, `tool:prisma`) and set visibility.
+2. **Search** — Find items in the app or via API. Filter by type, tags, and org.
+3. **Install** — Pull items into your project with the CLI or the VS Code extension. Files are written to the right folder for your AI tool automatically.
+4. **Sync** — Keep items up to date. Both the CLI and the extension use `.codemint/manifest.json` to track installed versions and pull updates.
 
 ---
 
-## How it works
+## Install into Your Project
 
-1. **Create** rules and skills in the app (or via API). Add tags (e.g. `tech:react`, `tool:prisma`) and set visibility.
-2. **Search** in the app or via API. Filter by type, tags, and org.
-3. **Install** with the CLI (`codemint add @rule/<slug>`) or the VS Code extension. The tool writes files into the correct paths for your chosen AI tool.
-4. **Sync** to pull updates. The CLI and extension use `.codemint/manifest.json` to track installed items and compare with the catalog.
+### VS Code / Cursor Extension
 
-CLI authentication uses a browser-based flow: you sign in at `/cli-auth`, authorize the CLI, and the app redirects back with a token. See [CLI integration](docs/cli-integration.md) for API details.
+Search **CodeMint** in the Extensions view or install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=codemint.codemint).
+
+### CLI
+
+```bash
+npm install -g codemint
+```
+
+See [CLI releases](https://github.com/neghani/code-mint-cli/releases) for the latest version and release notes.
+
+**Common commands:**
+
+```bash
+codemint login                       # authenticate via browser
+codemint add @rule/react-best-practices  # install a rule
+codemint sync                        # update all installed items
+codemint list                        # show installed items
+```
+
+---
+
+## Supported AI Tools
+
+| Tool | Files written to |
+|---|---|
+| Cursor | `.cursor/rules/` |
+| Cline | `.cline/` or `.clinerules` |
+| Windsurf | `.windsurf/` |
+| Continue | `.continue/` |
+| GitHub Copilot | `.github/instructions/` |
+| Claude | `CLAUDE.md` or `.claude/` |
+| Codex | `.codex/` |
+
+---
+
+## Organizations & Self-hosting
+
+Self-host this repo to run a private CodeMint instance for your organization.
+
+**Requirements:** Node.js 18+, PostgreSQL
+
+**Quick start:**
+
+```bash
+git clone https://github.com/neghani/code-mint-ai-app
+cd code-mint-ai-app
+cp .env.example .env   # fill in DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL
+npm install
+npx prisma db push
+npx prisma db seed
+npm run dev
+```
+
+**Deploy options:**
+- **Netlify** — `netlify.toml` is included; set env vars in the Netlify dashboard.
+- **Docker** — Build with `NEXT_STANDALONE=true`; set env vars at runtime.
+- **Any Node host** — Set the same env vars and run `npm run build && npm start`.
+
+Once your instance is running, point the **VS Code extension** or **CLI** at it:
+
+```bash
+# CLI
+codemint config set baseUrl https://codemint.yourcompany.com
+
+# VS Code extension
+# Command Palette → CodeMint: Set app URL
+```
+
+---
+
+## Tech Stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind CSS · PostgreSQL (Prisma ORM)  
+Auth: JWT in httpOnly cookies (web) and Bearer tokens (CLI / API)  
+Full-text search via PostgreSQL
 
 ---
 
 ## Documentation
 
 | Doc | Description |
-|-----|-------------|
-| [CLI integration](docs/cli-integration.md) | Auth flow, catalog and items API, identifier format. |
-| [CLI gaps](docs/CLI_GAPS.md) | Known gaps and fixes for the CodeMint CLI. |
-| [Repo coordination](docs/REPO_COORDINATION.md) | How the app and [CLI repo](https://github.com/neghani/code-mint-cli) stay in sync (install script, docs). |
-| [Extension spec](docs/EXTENSION_SPEC.md) | VS Code / Cursor extension behavior and design. |
+|---|---|
+| [CLI integration](docs/cli-integration.md) | Auth flow, catalog API, identifier format |
+| [Extension spec](docs/EXTENSION_SPEC.md) | VS Code / Cursor extension behavior and design |
+| [Deploy guide](DEPLOY.md) | Deployment options and environment variables |
+| [Repo coordination](docs/REPO_COORDINATION.md) | How this app and the CLI repo stay in sync |
+| [Security](docs/security.md) | Auth, token handling, and security model |
 
 ---
 
-## Tech stack
+## License
 
-Next.js 15 (App Router), TypeScript, Tailwind CSS, PostgreSQL (Prisma). Auth: JWT in httpOnly cookies; CLI/API: Bearer tokens. Full-text search via PostgreSQL.
-
----
-
-## Development and self-hosting
-
-**Local run** — Use an existing Postgres instance. Set `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, and `NEXT_PUBLIC_APP_URL` in `.env`, then:
-
-```bash
-npm install && npx prisma db push && npx prisma db seed && npm run dev
-```
-
-**Deploy** — Netlify (see `netlify.toml`), or any Node host. Set the same env vars; for production DB use a managed Postgres (e.g. Neon, Supabase).
-
-**Docker** — Build with `NEXT_STANDALONE=true` and run the standalone output with `DATABASE_URL` and JWT secrets set.
-
-**Scripts** — `npm run dev` | `build` | `start`; `npx prisma db push` | `db seed` | `db studio`; `npm run cli:auth` to test the CLI auth flow against the running app.
+[MIT](LICENSE) — © [CodeMint](https://codemint.app)
 
 ---
 
-CodeMintAI — Build smart. Build safe.
+<p align="center">
+  <a href="https://codemint.app">codemint.app</a> ·
+  <a href="https://marketplace.visualstudio.com/items?itemName=codemint.codemint">VS Code Extension</a> ·
+  <a href="https://github.com/neghani/code-mint-cli">CLI</a> ·
+  <a href="https://github.com/neghani/code-mint-cli/releases">CLI Releases</a> ·
+  <a href="https://github.com/neghani/code-mint-ai-app/issues">Report an issue</a>
+</p>

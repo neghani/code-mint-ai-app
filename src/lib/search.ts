@@ -1,6 +1,29 @@
 import { prisma } from "./db";
 import type { ItemType } from "@prisma/client";
 
+/** Thrown when DB is unreachable or credentials are invalid; route should return 503. */
+export class DatabaseConnectionError extends Error {
+  constructor(originalMessage: string) {
+    super("Database unreachable or invalid credentials. Check DATABASE_URL.");
+    this.name = "DatabaseConnectionError";
+    (this as unknown as { cause?: string }).cause = originalMessage;
+  }
+}
+
+function isPrismaConnectionError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const s = msg.toLowerCase();
+  return (
+    s.includes("authentication failed") ||
+    s.includes("can't reach database") ||
+    s.includes("can not reach database") ||
+    s.includes("p1001") ||
+    s.includes("p1017") ||
+    s.includes("connection refused") ||
+    s.includes("invalid credentials")
+  );
+}
+
 export type SearchFilters = {
   q?: string;
   type?: ItemType;
@@ -72,7 +95,7 @@ export async function searchItems(
 
   if (tags && tags.length > 0) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON t.id = it.tag_id WHERE it.item_id = i.id AND t.name = ANY($${paramIndex}::text[]))`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN "Tag" t ON t.id = it.tag_id WHERE it.item_id = i.id AND t.name = ANY($${paramIndex}::text[]))`
     );
     params.push(tags);
     paramIndex++;
@@ -110,6 +133,7 @@ export async function searchItems(
     total = countResult[0]?.total ?? 0;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (isPrismaConnectionError(err)) throw new DatabaseConnectionError(msg);
     throw new Error(`Search count failed: ${msg}`);
   }
 
@@ -145,6 +169,7 @@ export async function searchItems(
     rows = await prisma.$queryRawUnsafe<Row[]>(dataSql, ...params);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (isPrismaConnectionError(err)) throw new DatabaseConnectionError(msg);
     throw new Error(`Search query failed: ${msg}`);
   }
 
