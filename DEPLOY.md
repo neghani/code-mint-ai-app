@@ -16,7 +16,7 @@ Netlify runs **production install only** (`npm install` without devDependencies)
 | `@types/react`     | Type check (Next requires it) |
 | `@types/react-dom` | Type check (Next requires it) |
 | `@types/bcryptjs`  | Type check (prisma/seed.ts) |
-| `prisma`           | `prisma generate` in build; run `npm run migrate` (or `prisma migrate deploy`) separately to apply migrations |
+| `prisma`           | `prisma generate` in build; Netlify runs `prisma migrate deploy` before build (see netlify.toml) |
 | `@prisma/client`   | Generated client used by app |
 | `tailwindcss`      | PostCSS during `next build` |
 | `autoprefixer`     | PostCSS during `next build` |
@@ -30,7 +30,7 @@ npm install --omit=dev
 npm run build
 ```
 
-If that fails, the same error will happen on Netlify. The build does **not** run migrations; you must run `npm run migrate` (or `prisma migrate deploy`) in your deploy pipeline **after** build, with `DATABASE_URL` set.
+If that fails, the same error will happen on Netlify. On Netlify, `prisma migrate deploy` runs automatically before `npm run build` (see netlify.toml).
 
 ---
 
@@ -38,9 +38,14 @@ If that fails, the same error will happen on Netlify. The build does **not** run
 
 1. **Connect repo** to Netlify (GitHub/GitLab).
 
-2. **Build** (from `netlify.toml`): command `npm run build`, Node 20. The build does **not** apply database migrations.
+2. **Build** (from `netlify.toml`): Netlify runs `npx prisma migrate deploy && npm run build`, Node 20. Migrations are applied automatically before each build (idempotent).
 
-3. **Migrations:** Run `npm run migrate` (i.e. `prisma migrate deploy`) **after** build in your deploy pipeline, with `DATABASE_URL` set. On Netlify, add a post-build command or use a build plugin to run migrations against your production DB. For a **new** database, ensure the initial migration exists in `prisma/migrations/` (e.g. `20260307000000_init`).
+3. **One-time baseline (production DB already has tables from an older schema):** If the production database already had data before Prisma migrations were used, mark the initial migration as applied so Prisma does not try to re-run it. From your machine with production `DATABASE_URL` set:
+   ```bash
+   cd code-mint-ai-app
+   DATABASE_URL="<your-production-postgres-url>" npx prisma migrate resolve --applied "20260307000000_init"
+   ```
+   Then trigger a Netlify deploy (or run `npx prisma migrate deploy` locally with the same `DATABASE_URL`). Future deploys will run `migrate deploy` in the build and apply any new migrations automatically.
 
 4. **Environment variables** (Site settings → Environment variables):
    - `DATABASE_URL` — PostgreSQL (e.g. Neon, Supabase). **Required** for `npm run migrate` and at runtime.

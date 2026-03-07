@@ -6,12 +6,16 @@
 # Config is next.config.mjs (no TS required to load config). See DEPLOY.md checklist.
 
 [build]
-  command = "npm run build"
+  command = "npx prisma migrate deploy && npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
   NODE_ENV = "production"
 
+# Migrations run on every deploy (idempotent). One-time baseline for existing prod DB:
+#   DATABASE_URL="<prod-url>" npx prisma migrate resolve --applied "20260307000000_init"
+# Then deploy; or run locally: npx prisma migrate deploy
+#
 # Env (Netlify UI → Site settings → Environment variables):
 # DATABASE_URL (build), JWT_SECRET, JWT_REFRESH_SECRET, NEXT_PUBLIC_APP_URL
 
