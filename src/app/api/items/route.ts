@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth } from "@/middleware/requireAuth";
 import { itemService } from "@/services/item.service";
 import { tagRepo } from "@/repositories/tag.repo";
+import { apiError } from "@/lib/api-error";
 
 const createSchema = z
   .object({
@@ -59,12 +60,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(item);
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     if (e instanceof Error && e.message === "Not a member of this organization") {
-      return NextResponse.json({ error: e.message }, { status: 403 });
+      return apiError("forbidden", e.message, 403);
     }
     logError("items/POST", e);
-    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
+    return apiError("internal_error", "Failed to create item", 500);
   }
 }

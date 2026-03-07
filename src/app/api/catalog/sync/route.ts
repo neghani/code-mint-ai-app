@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ items: result });
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     logError("catalog/sync", e);
     return apiError("sync_failed", "Sync failed", 500);

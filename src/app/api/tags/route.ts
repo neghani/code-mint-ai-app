@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/middleware/requireAuth";
 import { tagRepo } from "@/repositories/tag.repo";
+import { apiError } from "@/lib/api-error";
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -30,8 +31,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(tag);
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
-    return NextResponse.json({ error: "Failed to create tag" }, { status: 500 });
+    return apiError("internal_error", "Failed to create tag", 500);
   }
 }

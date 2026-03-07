@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/middleware/requireAuth";
 import { inviteService } from "@/services/invite.service";
+import { apiError } from "@/lib/api-error";
 
 const bodySchema = z.object({ token: z.string().min(1) });
 
@@ -15,18 +16,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(org);
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     if (e instanceof Error) {
       const isBadRequest =
         e.message.includes("expired") ||
         e.message.includes("Invalid") ||
         e.message.includes("already used");
-      return NextResponse.json(
-        { error: e.message },
-        { status: isBadRequest ? 400 : 500 }
-      );
+      return apiError("invalid_request", e.message, isBadRequest ? 400 : 500);
     }
-    return NextResponse.json({ error: "Failed to accept invite" }, { status: 500 });
+    return apiError("internal_error", "Failed to accept invite", 500);
   }
 }

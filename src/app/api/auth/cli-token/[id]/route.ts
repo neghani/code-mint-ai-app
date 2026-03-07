@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/requireAuth";
 import { deleteApiToken } from "@/lib/api-token";
+import { apiError } from "@/lib/api-error";
 
 /**
  * DELETE /api/auth/cli-token/:id
@@ -15,7 +16,7 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await deleteApiToken(id, auth.userId);
   if (!deleted) {
-    return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+    return apiError("not_found", "Not found or forbidden", 404);
   }
   return NextResponse.json({ ok: true });
 }

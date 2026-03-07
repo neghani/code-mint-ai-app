@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     return apiError("login_failed", "Login failed", 500);
   }

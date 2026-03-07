@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getOptionalAuth } from "@/middleware/requireAuth";
 import { getUserOrgIds } from "@/lib/request-context";
 import { itemRepo } from "@/repositories/item.repo";
@@ -8,6 +9,8 @@ import { apiError } from "@/lib/api-error";
 
 const RATE_LIMIT_ANON = 60;
 const RATE_LIMIT_AUTH = 120;
+
+const refSchema = z.object({ ref: z.string().min(1) });
 
 /**
  * GET /api/catalog/resolve?ref=@rule/slug or @skill/slug
@@ -24,26 +27,30 @@ export async function GET(req: NextRequest) {
   }
   const userOrgIds = auth ? await getUserOrgIds(auth.userId) : [];
 
-  const ref = req.nextUrl.searchParams.get("ref");
-  if (!ref || !ref.startsWith("@")) {
-    return NextResponse.json({ error: "ref required, e.g. ref=@rule/slug or @skill/slug" }, { status: 400 });
+  const parsed = refSchema.safeParse({ ref: req.nextUrl.searchParams.get("ref") });
+  if (!parsed.success) {
+    return apiError("invalid_request", "ref required, e.g. ref=@rule/slug or @skill/slug", 400);
+  }
+  const ref = parsed.data.ref;
+  if (!ref.startsWith("@")) {
+    return apiError("invalid_request", "ref required, e.g. ref=@rule/slug or @skill/slug", 400);
   }
 
   const match = ref.match(/^@(rule|skill)\/(.+)$/);
   if (!match) {
-    return NextResponse.json({ error: "ref must be @rule/<slug> or @skill/<slug>" }, { status: 400 });
+    return apiError("invalid_request", "ref must be @rule/<slug> or @skill/<slug>", 400);
   }
   const [, type, slug] = match;
   if (!slug) {
-    return NextResponse.json({ error: "slug required" }, { status: 400 });
+    return apiError("invalid_request", "slug required", 400);
   }
 
   const item = await itemRepo.findByTypeAndSlug(type as "rule" | "skill", slug);
   if (!item) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("not_found", "Not found", 404);
   }
   if (item.visibility === "org" && item.orgId && !userOrgIds.includes(item.orgId)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("not_found", "Not found", 404);
   }
 
   await itemRepo.incrementDownloadCount(item.id);

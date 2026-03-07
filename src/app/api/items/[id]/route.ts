@@ -4,6 +4,7 @@ import { requireAuth, getOptionalAuth } from "@/middleware/requireAuth";
 import { itemService } from "@/services/item.service";
 import { getUserOrgIds } from "@/lib/request-context";
 import { logError } from "@/lib/logger";
+import { apiError } from "@/lib/api-error";
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -28,7 +29,7 @@ export async function GET(
   const { id } = await params;
   const item = await itemService.getById(id, userId, userOrgIds);
   if (!item) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("not_found", "Not found", 404);
   }
   return NextResponse.json(item);
 }
@@ -48,12 +49,12 @@ export async function PUT(
     return NextResponse.json(item);
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     if (e instanceof Error && (e.message === "Forbidden" || e.message === "Item not found")) {
-      return NextResponse.json({ error: e.message }, { status: e.message === "Item not found" ? 404 : 403 });
+      return apiError(e.message === "Item not found" ? "not_found" : "forbidden", e.message, e.message === "Item not found" ? 404 : 403);
     }
-    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+    return apiError("internal_error", "Failed to update", 500);
   }
 }
 
@@ -70,9 +71,9 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof Error && (e.message === "Forbidden" || e.message === "Item not found")) {
-      return NextResponse.json({ error: e.message }, { status: e.message === "Item not found" ? 404 : 403 });
+      return apiError(e.message === "Item not found" ? "not_found" : "forbidden", e.message, e.message === "Item not found" ? 404 : 403);
     }
     logError("items/DELETE", e);
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    return apiError("internal_error", "Failed to delete", 500);
   }
 }

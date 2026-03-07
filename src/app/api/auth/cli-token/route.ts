@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/requireAuth";
 import { createApiToken, listApiTokens } from "@/lib/api-token";
+import { apiError } from "@/lib/api-error";
 
 /**
  * GET /api/auth/cli-token
@@ -29,6 +30,6 @@ export async function POST(req: NextRequest) {
     const { rawToken } = await createApiToken(auth.userId, name);
     return NextResponse.json({ token: rawToken });
   } catch {
-    return NextResponse.json({ error: "Failed to create token" }, { status: 500 });
+    return apiError("internal_error", "Failed to create token", 500);
   }
 }

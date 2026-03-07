@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/middleware/requireAuth";
 import { requireOrgAdmin } from "@/middleware/requireOrg";
 import { inviteService } from "@/services/invite.service";
+import { apiError } from "@/lib/api-error";
 
 const bodySchema = z.object({ email: z.string().email() });
 
@@ -24,11 +25,11 @@ export async function POST(
     return NextResponse.json({ invite, inviteLink });
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
     if (e instanceof Error) {
-      return NextResponse.json({ error: e.message }, { status: 403 });
+      return apiError("forbidden", e.message, 403);
     }
-    return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
+    return apiError("internal_error", "Failed to create invite", 500);
   }
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/middleware/requireAuth";
 import { requireOrgAdmin } from "@/middleware/requireOrg";
 import { orgRepo } from "@/repositories/org.repo";
+import { apiError } from "@/lib/api-error";
 
 const bodySchema = z.object({ role: z.enum(["admin", "member", "viewer"]) });
 
@@ -24,8 +25,8 @@ export async function PATCH(
     return NextResponse.json(member ?? { role });
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return NextResponse.json({ error: e.flatten() }, { status: 400 });
+      return apiError("validation_error", "Validation failed", 400);
     }
-    return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+    return apiError("internal_error", "Failed to update role", 500);
   }
 }
